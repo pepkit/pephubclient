@@ -1,4 +1,4 @@
-import json
+import os
 import peppy
 import requests
 from pephubclient.constants import PEPHUB_URL, RegistryPath
@@ -10,6 +10,9 @@ from typing import Optional
 
 
 class PEPHubClient:
+    CONVERT_ENDPOINT = "convert?filter=csv"
+    TMP_FILE_NAME = "pep_project.csv"
+
     """
     Main class responsible for providing Python interface for PEPhub.
     """
@@ -44,9 +47,11 @@ class PEPHubClient:
             registry_path_data: Information about project, namespace, version, etc.
             variables: Optional array of variables that will be passed to parametrize PEP project from PEPhub.
         """
-        endpoint = registry_path_data.namespace + "/" + registry_path_data.item
-        variables_string = PEPHubClient._parse_variables(variables)
-        full_url = PEPHUB_URL + endpoint + variables_string
+        endpoint = registry_path_data.namespace + "/" + registry_path_data.item + "/" + PEPHubClient.CONVERT_ENDPOINT
+        full_url = PEPHUB_URL + endpoint
+        if variables:
+            variables_string = PEPHubClient._parse_variables(variables)
+            full_url += variables_string
         return requests.get(full_url, verify=False)
 
     @staticmethod
@@ -58,10 +63,12 @@ class PEPHubClient:
             pephub_response: Raw response object from PEPhub.
 
         Returns:
-
+            Peppy project instance.
         """
-        response_as_dictionary = json.loads(pephub_response.content.decode("utf-8"))
-        return Project()
+        PEPHubClient._save_response(pephub_response)
+        project = Project(PEPHubClient.TMP_FILE_NAME)
+        PEPHubClient._delete_file(PEPHubClient.TMP_FILE_NAME)
+        return project
 
     @staticmethod
     def _parse_variables(pep_variables: dict) -> str:
@@ -78,3 +85,12 @@ class PEPHubClient:
             parsed_variables.append(f"{variable_name}={variable_value}")
 
         return "?" + "&".join(parsed_variables)
+
+    @staticmethod
+    def _save_response(pephub_response: requests.Response) -> None:
+        with open(PEPHubClient.TMP_FILE_NAME, "w") as f:
+            f.write(pephub_response.content.decode("utf-8"))
+
+    @staticmethod
+    def _delete_file(filename: str) -> None:
+        os.remove(filename)
