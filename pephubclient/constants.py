@@ -1,8 +1,8 @@
-from pydantic import BaseModel
 from typing import Optional
 
+from pydantic import BaseModel
 
-PEPHUB_URL = "https://pephub.databio.org/pep/"
+PEPHUB_BASE_URL = "https://pephub.databio.org/pep/"
 
 
 class RegistryPath(BaseModel):
