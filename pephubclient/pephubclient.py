@@ -1,14 +1,16 @@
 import os
 from typing import Optional, Union
-
+import urllib3
 import peppy
 import requests
 from peppy import Project
 from pydantic.error_wrappers import ValidationError
 from ubiquerg import parse_registry_path
 
-from pephubclient.constants import PEPHUB_BASE_URL, RegistryPath
+from pephubclient.constants import PEPHUB_BASE_URL, RegistryPath, DEFAULT_FILENAME
 from pephubclient.exceptions import IncorrectQueryStringError
+
+urllib3.disable_warnings()
 
 
 class PEPHubClient:
@@ -17,15 +19,42 @@ class PEPHubClient:
     """
 
     CONVERT_ENDPOINT = "convert?filter=csv"
-    TMP_FILE_NAME = "pep_project.csv"
 
-    def __init__(self):
+    def __init__(self, filename_to_save: str = DEFAULT_FILENAME):
         self.registry_path_data: Union[RegistryPath, None] = None
+        self.filename_to_save = filename_to_save
 
     def load_pep(self, query_string: str, variables: Optional[dict] = None) -> Project:
+        """
+        Request PEPhub and return the requested project as peppy.Project object.
+
+        Args:
+            query_string: Project namespace, eg. "geo/GSE124224"
+            variables: Optional variables to be passed to PEPhub
+
+        Returns:
+            Downloaded project as object.
+        """
         self.set_registry_data(query_string)
         pephub_response = self.request_pephub(variables)
         return self.parse_pephub_response(pephub_response)
+
+    def save_pep_locally(
+        self, query_string: str, variables: Optional[dict] = None
+    ) -> None:
+        """
+        Request PEPhub and save the requested project on the disk.
+
+        Args:
+            query_string: Project namespace, eg. "geo/GSE124224"
+            variables: Optional variables to be passed to PEPhub
+
+        """
+        self.set_registry_data(query_string)
+        pephub_response = self.request_pephub(variables)
+        filename = self._create_filename_to_save_downloaded_project()
+        self._save_response(pephub_response, filename)
+        print(f"File downloaded -> {os.path.join(os.getcwd(), filename)}")
 
     def set_registry_data(self, query_string: str) -> None:
         """
@@ -68,9 +97,9 @@ class PEPHubClient:
         Returns:
             Peppy project instance.
         """
-        self._save_response(pephub_response)
-        project = Project(self.TMP_FILE_NAME)
-        self._delete_file(self.TMP_FILE_NAME)
+        self._save_response(pephub_response, self.filename_to_save)
+        project = Project(self.filename_to_save)
+        self._delete_file(self.filename_to_save)
         return project
 
     def _build_request_url(self):
@@ -99,10 +128,37 @@ class PEPHubClient:
 
         return "?" + "&".join(parsed_variables)
 
-    def _save_response(self, pephub_response: requests.Response) -> None:
-        with open(self.TMP_FILE_NAME, "w") as f:
+    @staticmethod
+    def _save_response(
+        pephub_response: requests.Response, filename: str = DEFAULT_FILENAME
+    ) -> None:
+        with open(filename, "w") as f:
             f.write(pephub_response.content.decode("utf-8"))
 
     @staticmethod
     def _delete_file(filename: str) -> None:
         os.remove(filename)
+
+    def _create_filename_to_save_downloaded_project(self) -> str:
+        """
+        Takes query string and creates output filename to save the project to.
+
+        Args:
+            query_string: Query string that was used to find the project.
+
+        Returns:
+            Filename uniquely identifying the project.
+        """
+        filename = []
+
+        if self.registry_path_data.namespace:
+            filename.append(self.registry_path_data.namespace)
+        if self.registry_path_data.item:
+            filename.append(self.registry_path_data.item)
+
+        filename = "_".join(filename)
+
+        if self.registry_path_data.tag:
+            filename = filename + ":" + self.registry_path_data.tag
+
+        return filename + ".csv"

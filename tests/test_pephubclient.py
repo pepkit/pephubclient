@@ -62,9 +62,7 @@ def test_load_pep(mocker, requests_get_mock):
         "pephubclient.pephubclient.PEPHubClient._delete_file"
     )
 
-    pep_hub_client = PEPHubClient()
-    pep_hub_client.TMP_FILE_NAME = None
-    pep_hub_client.load_pep("test/querystring")
+    PEPHubClient(filename_to_save=None).load_pep("test/querystring")
 
     assert save_response_mock.called
     assert delete_file_mock.called_with(None)
@@ -80,3 +78,33 @@ def test_save_response():
     with patch("builtins.open", mock_open()) as open_mock:
         PEPHubClient()._save_response(Mock())
     assert open_mock.called
+
+
+def test_save_pep_locally(mocker, requests_get_mock):
+    save_response_mock = mocker.patch(
+        "pephubclient.pephubclient.PEPHubClient._save_response"
+    )
+    PEPHubClient().save_pep_locally("test/project")
+
+    assert save_response_mock.called
+    assert requests_get_mock.called
+
+
+@pytest.mark.parametrize(
+    "registry_path, expected_filename",
+    [
+        (
+            RegistryPath(namespace="test", item="project", tag="2022"),
+            "test_project:2022.csv",
+        ),
+        (RegistryPath(namespace="test", item="project", tag=""), "test_project.csv"),
+    ],
+)
+def test_create_filename_to_save_downloaded_project(registry_path, expected_filename):
+    pep_hub_client = PEPHubClient()
+    pep_hub_client.registry_path_data = registry_path
+
+    assert (
+        pep_hub_client._create_filename_to_save_downloaded_project()
+        == expected_filename
+    )
