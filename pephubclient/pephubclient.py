@@ -1,12 +1,14 @@
 import os
+from typing import Optional
+
 import peppy
 import requests
-from pephubclient.constants import PEPHUB_URL, RegistryPath
 from peppy import Project
-from pephubclient.exceptions import IncorrectQueryStringError
-from ubiquerg import parse_registry_path
 from pydantic.error_wrappers import ValidationError
-from typing import Optional
+from ubiquerg import parse_registry_path
+
+from pephubclient.constants import PEPHUB_URL, RegistryPath
+from pephubclient.exceptions import IncorrectQueryStringError
 
 
 class PEPHubClient:
@@ -39,7 +41,9 @@ class PEPHubClient:
             raise IncorrectQueryStringError(query_string=query_string)
 
     @staticmethod
-    def request_pephub(registry_path_data: RegistryPath, variables: Optional[dict] = None) -> requests.Response:
+    def request_pephub(
+        registry_path_data: RegistryPath, variables: Optional[dict] = None
+    ) -> requests.Response:
         """
         Send request to PEPhub to obtain the project.
 
