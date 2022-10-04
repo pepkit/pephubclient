@@ -2,13 +2,14 @@ import os
 from typing import Optional, Union
 import urllib3
 import peppy
+import json
 import requests
 from peppy import Project
 from pydantic.error_wrappers import ValidationError
 from ubiquerg import parse_registry_path
 
 from pephubclient.constants import PEPHUB_BASE_URL, RegistryPath, DEFAULT_FILENAME
-from pephubclient.exceptions import IncorrectQueryStringError
+from exceptions import IncorrectQueryStringError, PEPhubResponseError
 
 urllib3.disable_warnings()
 
@@ -35,7 +36,7 @@ class PEPHubClient:
         Returns:
             Downloaded project as object.
         """
-        self.set_registry_data(query_string)
+        self._set_registry_data(query_string)
         pephub_response = self.request_pephub(variables)
         return self.parse_pephub_response(pephub_response)
 
@@ -50,13 +51,14 @@ class PEPHubClient:
             variables: Optional variables to be passed to PEPhub
 
         """
-        self.set_registry_data(query_string)
+        self._set_registry_data(query_string)
         pephub_response = self.request_pephub(variables)
+        decoded_response = pephub_response.content.decode("utf-8")
         filename = self._create_filename_to_save_downloaded_project()
-        self._save_response(pephub_response, filename)
+        self._save_response(decoded_response, filename)
         print(f"File downloaded -> {os.path.join(os.getcwd(), filename)}")
 
-    def set_registry_data(self, query_string: str) -> None:
+    def _set_registry_data(self, query_string: str) -> None:
         """
         Parse provided query string to extract project name, sample name, etc.
 
@@ -97,7 +99,12 @@ class PEPHubClient:
         Returns:
             Peppy project instance.
         """
-        self._save_response(pephub_response, self.filename_to_save)
+        decoded_response = pephub_response.content.decode("utf-8")
+
+        if pephub_response.status_code != 200:
+            raise PEPhubResponseError(message=json.loads(decoded_response).get("detail"))
+
+        self._save_response(decoded_response, self.filename_to_save)
         project = Project(self.filename_to_save)
         self._delete_file(self.filename_to_save)
         return project
@@ -130,10 +137,10 @@ class PEPHubClient:
 
     @staticmethod
     def _save_response(
-        pephub_response: requests.Response, filename: str = DEFAULT_FILENAME
+        pephub_response: str, filename: str = DEFAULT_FILENAME
     ) -> None:
         with open(filename, "w") as f:
-            f.write(pephub_response.content.decode("utf-8"))
+            f.write(pephub_response)
 
     @staticmethod
     def _delete_file(filename: str) -> None:

@@ -2,8 +2,10 @@ import typer
 
 from pephubclient import __app_name__, __version__
 from pephubclient.pephubclient import PEPHubClient
+from github_oauth_client.github_oauth_client import GitHubOAuthClient
 
 pep_hub_client = PEPHubClient()
+github_client = GitHubOAuthClient()
 app = typer.Typer()
 
 
@@ -14,7 +16,8 @@ def pull(project_query_string: str):
 
 @app.command()
 def login():
-    print("Logging in...")
+    github_client.login()
+    print(github_client.access_token)
 
 
 @app.command()

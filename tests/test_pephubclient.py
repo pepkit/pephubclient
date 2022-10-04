@@ -10,7 +10,7 @@ def test_get_request_data_from_string_raises_error_for_incorrect_query_string(
     query_string,
 ):
     with pytest.raises(IncorrectQueryStringError) as e:
-        PEPHubClient().set_registry_data(query_string)
+        PEPHubClient()._set_registry_data(query_string)
 
     assert e.value.query_string == query_string
 
@@ -23,7 +23,7 @@ def test_get_request_data_from_string_parses_data_correctly(
     query_string, expected_output
 ):
     pep_hub_client = PEPHubClient()
-    pep_hub_client.set_registry_data(query_string)
+    pep_hub_client._set_registry_data(query_string)
     assert pep_hub_client.registry_path_data == expected_output
 
 
