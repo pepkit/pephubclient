@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import Mock, patch, mock_open
 from pephubclient import PEPHubClient
 from pephubclient.constants import RegistryPath
-from pephubclient.exceptions import IncorrectQueryStringError
+from exceptions import IncorrectQueryStringError, PEPhubResponseError
 
 
 @pytest.mark.parametrize("query_string", [""])
@@ -54,18 +54,20 @@ def test_request_pephub_creates_correct_url(variables, expected_url, requests_ge
     requests_get_mock.assert_called_with(expected_url, verify=False)
 
 
-def test_load_pep(mocker, requests_get_mock):
+def test_load_pep(mocker):
     save_response_mock = mocker.patch(
         "pephubclient.pephubclient.PEPHubClient._save_response"
     )
     delete_file_mock = mocker.patch(
         "pephubclient.pephubclient.PEPHubClient._delete_file"
     )
+    requests_get_mock = mocker.patch("requests.get", return_value=Mock(status_code=200))
 
     PEPHubClient(filename_to_save=None).load_pep("test/querystring")
 
     assert save_response_mock.called
     assert delete_file_mock.called_with(None)
+    assert requests_get_mock.called
 
 
 def test_delete_file(mocker):
@@ -108,3 +110,10 @@ def test_create_filename_to_save_downloaded_project(registry_path, expected_file
         pep_hub_client._create_filename_to_save_downloaded_project()
         == expected_filename
     )
+
+
+def test_parse_pephub_response_raises_correct_error():
+    with pytest.raises(PEPhubResponseError):
+        PEPHubClient().parse_pephub_response(
+            Mock(content=b'{"detail": "error message here"}', status_code=404)
+        )

@@ -6,5 +6,11 @@ def requests_get_mock(mocker):
     return mocker.patch("requests.get")
 
 
-"https://pephub.databio.org/pep/test_geo_project/test_name/123?DATA=test"
-"https://pephub.databio.org/pep/test_geo_project/test_name/convert?filter=csv?DATA=test"
+@pytest.fixture
+def input_return_mock(monkeypatch):
+    return monkeypatch.setattr("builtins.input", lambda: None)
+
+
+@pytest.fixture
+def test_access_token():
+    return "test_access_token"

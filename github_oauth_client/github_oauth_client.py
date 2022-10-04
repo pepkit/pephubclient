@@ -5,13 +5,19 @@ from typing import Type
 import requests
 from pydantic import BaseModel, ValidationError
 
-from github_oauth_client.constants import (ENCODING, GITHUB_BASE_LOGIN_URL,
-                                           GITHUB_CLIENT_CODE,
-                                           GITHUB_OAUTH_ENDPOINT,
-                                           GITHUB_VERIFICATION_CODES_ENDPOINT,
-                                           GRANT_TYPE, HEADERS)
-from github_oauth_client.models import (AccessTokenResponseModel,
-                                        VerificationCodesResponseModel)
+from github_oauth_client.constants import (
+    ENCODING,
+    GITHUB_BASE_LOGIN_URL,
+    GITHUB_CLIENT_CODE,
+    GITHUB_OAUTH_ENDPOINT,
+    GITHUB_VERIFICATION_CODES_ENDPOINT,
+    GRANT_TYPE,
+    HEADERS,
+)
+from github_oauth_client.models import (
+    AccessTokenResponseModel,
+    VerificationCodesResponseModel,
+)
 
 
 class GitHubOAuthClient:
@@ -76,6 +82,22 @@ class GitHubOAuthClient:
         return access_token_response.access_token
 
     @staticmethod
+    def send_github_request(endpoint: str, params: dict) -> requests.Response:
+        """
+        Wrapper for sending the request to GitHub.
+
+        Args:
+            endpoint: String that will be added at the end of BASE_URL.
+            params: Additional parameters.
+
+        Returns:
+            GitHub response.
+        """
+        return requests.post(
+            url=f"{GITHUB_BASE_LOGIN_URL}{endpoint}", headers=HEADERS, params=params
+        )
+
+    @staticmethod
     def _parse_github_response(response: requests.Response, model: Type[BaseModel]):
         """
         Decode the response from GitHub and pack the returned data into appropriate model.
@@ -92,19 +114,3 @@ class GitHubOAuthClient:
             return model(**content)
         except (json.JSONDecodeError, ValidationError):
             raise GitHubResponseError()
-
-    @staticmethod
-    def send_github_request(endpoint: str, params: dict) -> requests.Response:
-        """
-        Wrapper for sending the request to GitHub.
-
-        Args:
-            endpoint: String that will be added at the end of BASE_URL.
-            params: Additional parameters.
-
-        Returns:
-            GitHub response.
-        """
-        return requests.post(
-            url=f"{GITHUB_BASE_LOGIN_URL}{endpoint}", headers=HEADERS, params=params
-        )

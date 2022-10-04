@@ -102,7 +102,9 @@ class PEPHubClient:
         decoded_response = pephub_response.content.decode("utf-8")
 
         if pephub_response.status_code != 200:
-            raise PEPhubResponseError(message=json.loads(decoded_response).get("detail"))
+            raise PEPhubResponseError(
+                message=json.loads(decoded_response).get("detail")
+            )
 
         self._save_response(decoded_response, self.filename_to_save)
         project = Project(self.filename_to_save)
@@ -136,9 +138,7 @@ class PEPHubClient:
         return "?" + "&".join(parsed_variables)
 
     @staticmethod
-    def _save_response(
-        pephub_response: str, filename: str = DEFAULT_FILENAME
-    ) -> None:
+    def _save_response(pephub_response: str, filename: str = DEFAULT_FILENAME) -> None:
         with open(filename, "w") as f:
             f.write(pephub_response)
 
