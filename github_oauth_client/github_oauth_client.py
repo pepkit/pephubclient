@@ -1,14 +1,9 @@
 import json
-from exceptions import GitHubResponseError
-from typing import Type
-
+from typing import Union, Type
+from error_handling.error_handler import ErrorHandler
 import requests
-from pydantic import BaseModel, ValidationError
-
 from github_oauth_client.constants import (
-    ENCODING,
     GITHUB_BASE_LOGIN_URL,
-    GITHUB_CLIENT_CODE,
     GITHUB_OAUTH_ENDPOINT,
     GITHUB_VERIFICATION_CODES_ENDPOINT,
     GRANT_TYPE,
@@ -18,34 +13,36 @@ from github_oauth_client.models import (
     AccessTokenResponseModel,
     VerificationCodesResponseModel,
 )
+from pephubclient.models import ClientData
+from pydantic import BaseModel, ValidationError
+from error_handling.exceptions import ResponseError
+from helpers import decode_response
 
 
 class GitHubOAuthClient:
     """
-    Class responsible for authorization with GitHub.
+    Class responsible for authorization with GitHub. By default authorization credentials will be saved
+
+    It has following methods in public interface:
+      - login: logs user in by creating credentials file with user data
+      - logout: logs user out by deleting credentials file with user data
+      - retrieve_logged_user_data: loads credentials file with user data into memory
     """
 
-    def __init__(self):
-        self.access_token: str = ""
+    def get_access_token(self, client_data: ClientData):
+        device_code = self._get_device_verification_code(client_data)
+        return self._request_github_for_access_token(device_code, client_data)
 
-    def login(self):
-        """
-        Login user using OAuth2.
-        """
-        device_code = self.get_device_verification_code()
-        access_token = self.get_access_token(device_code)
-        self.access_token = access_token
-
-    def get_device_verification_code(self) -> str:
+    def _get_device_verification_code(self, client_data: ClientData) -> str:
         """
         Send the request for verification codes, parse the response and return device code.
 
         Returns:
             Device code which is needed later to obtain the access code.
         """
-        resp = self.send_github_request(
+        resp = GitHubOAuthClient._send_github_request(
             endpoint=GITHUB_VERIFICATION_CODES_ENDPOINT,
-            params={"client_id": GITHUB_CLIENT_CODE},
+            params={"client_id": client_data.client_id},
         )
         verification_codes_response = self._parse_github_response(
             resp, VerificationCodesResponseModel
@@ -54,11 +51,13 @@ class GitHubOAuthClient:
             f"User verification code: {verification_codes_response.user_code}, "
             f"please enter the code here: {verification_codes_response.verification_uri}"
         )
-        # TODO: implement the following logic: if user closes the tab, then proceed with the program
         input()
+
         return verification_codes_response.device_code
 
-    def get_access_token(self, device_code: str) -> str:
+    def _request_github_for_access_token(
+        self, device_code: str, client_data: ClientData
+    ) -> str:
         """
         Send the request for access token, parse the response and return access token.
 
@@ -68,27 +67,30 @@ class GitHubOAuthClient:
         Returns:
             Access token.
         """
-        resp = self.send_github_request(
+        response = GitHubOAuthClient._send_github_request(
             endpoint=GITHUB_OAUTH_ENDPOINT,
             params={
-                "client_id": GITHUB_CLIENT_CODE,
+                "client_id": client_data.client_id,
                 "device_code": device_code,
                 "grant_type": GRANT_TYPE,
             },
         )
         access_token_response = self._parse_github_response(
-            resp, AccessTokenResponseModel
+            response, AccessTokenResponseModel
         )
         return access_token_response.access_token
 
     @staticmethod
-    def send_github_request(endpoint: str, params: dict) -> requests.Response:
+    def _send_github_request(
+        endpoint: str, params: Union[dict, None] = None
+    ) -> requests.Response:
         """
         Wrapper for sending the request to GitHub.
 
         Args:
             endpoint: String that will be added at the end of BASE_URL.
             params: Additional parameters.
+            headers: Headers.
 
         Returns:
             GitHub response.
@@ -97,8 +99,9 @@ class GitHubOAuthClient:
             url=f"{GITHUB_BASE_LOGIN_URL}{endpoint}", headers=HEADERS, params=params
         )
 
-    @staticmethod
-    def _parse_github_response(response: requests.Response, model: Type[BaseModel]):
+    def _parse_github_response(
+        self, response: requests.Response, model: Type[BaseModel]
+    ):
         """
         Decode the response from GitHub and pack the returned data into appropriate model.
 
@@ -109,8 +112,9 @@ class GitHubOAuthClient:
         Returns:
             Response data as an instance of correct model.
         """
+        content = json.loads(decode_response(response))
+
         try:
-            content = json.loads(response.content.decode(ENCODING))
             return model(**content)
-        except (json.JSONDecodeError, ValidationError):
-            raise GitHubResponseError()
+        except ValidationError:
+            raise ErrorHandler.parse_github_response_error(content) or ResponseError()

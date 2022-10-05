@@ -129,3 +129,4 @@ dmypy.json
 .pyre/
 .idea/
 run.py
+environment/local.env

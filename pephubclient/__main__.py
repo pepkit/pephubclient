@@ -1,4 +1,4 @@
-from pephubclient.cli import app, __app_name__
+from pephubclient.cli import __app_name__, app
 
 
 def main():
