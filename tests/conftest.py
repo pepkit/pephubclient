@@ -1,5 +1,6 @@
 import pytest
-from github_oauth_client.models import LoggedUserData
+from pephubclient.models import ClientData
+import json
 
 
 @pytest.fixture
@@ -18,5 +19,19 @@ def test_access_token():
 
 
 @pytest.fixture
-def test_logged_user_data():
-    return LoggedUserData(login="test_user", id=1234567)
+def test_jwt():
+    return (
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9."
+        "eyJsb2dpbiI6InJhZmFsc3RlcGllbiIsImlkIjo0MzkyNjUyMiwib3JnYW5pemF0aW9ucyI6bnVsbH0."
+        "mgBP-7x5l9cqufhzdVi0OFA78pkYDEymwPFwud02BAc"
+    )
+
+
+@pytest.fixture
+def test_jwt_response(test_jwt):
+    return json.dumps({"jwt_token": test_jwt}).encode("utf-8")
+
+
+@pytest.fixture
+def test_client_data():
+    return ClientData(client_id="test_id")

@@ -27,8 +27,12 @@ class FilesManager:
             os.remove(filename)
 
     @staticmethod
-    def save_pep_project(pep_project: str, registry_path: RegistryPath, filename: Optional[str] = None) -> None:
-        filename = filename or FilesManager._create_filename_to_save_downloaded_project(registry_path)
+    def save_pep_project(
+        pep_project: str, registry_path: RegistryPath, filename: Optional[str] = None
+    ) -> None:
+        filename = filename or FilesManager._create_filename_to_save_downloaded_project(
+            registry_path
+        )
         with open(filename, "w") as f:
             f.write(pep_project)
         print(f"File downloaded -> {os.path.join(os.getcwd(), filename)}")

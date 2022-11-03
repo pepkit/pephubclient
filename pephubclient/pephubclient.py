@@ -7,7 +7,6 @@ import urllib3
 from peppy import Project
 from pydantic.error_wrappers import ValidationError
 from ubiquerg import parse_registry_path
-from github_oauth_client.models import HTTPMethod
 from pephubclient.constants import (
     PEPHUB_BASE_URL,
     PEPHUB_PEP_API_BASE_URL,
@@ -15,16 +14,16 @@ from pephubclient.constants import (
 )
 from pephubclient.models import JWTDataResponse
 from pephubclient.models import ClientData
-from helpers import decode_response
 from error_handling.exceptions import ResponseError, IncorrectQueryStringError
-from error_handling.constants import ERROR_CODES, ResponseStatusCodes
+from error_handling.constants import ResponseStatusCodes
 from github_oauth_client.github_oauth_client import GitHubOAuthClient
 from pephubclient.files_manager import FilesManager
+from helpers import RequestManager
 
 urllib3.disable_warnings()
 
 
-class PEPHubClient:
+class PEPHubClient(RequestManager):
     CONVERT_ENDPOINT = "convert?filter=csv"
     CLI_LOGIN_ENDPOINT = "auth/login_cli"
     USER_DATA_FILE_NAME = "jwt.txt"
@@ -51,7 +50,7 @@ class PEPHubClient:
     def _save_pep_locally(
         self,
         query_string: str,
-        jwt: Optional[str] = None,
+        jwt_data: Optional[str] = None,
         variables: Optional[dict] = None,
     ) -> None:
         """
@@ -63,9 +62,15 @@ class PEPHubClient:
 
         """
         self._set_registry_data(query_string)
-        pephub_response = self._request_pephub("GET", variables=variables, jwt_data=jwt)
+        pephub_response = self.send_request(
+            method="GET",
+            url=self._build_request_url(variables),
+            cookies=self._get_cookies(jwt_data),
+        )
         decoded_response = self._handle_pephub_response(pephub_response)
-        FilesManager.save_pep_project(decoded_response, registry_path=self.registry_path)
+        FilesManager.save_pep_project(
+            decoded_response, registry_path=self.registry_path
+        )
 
     def _load_pep(
         self,
@@ -85,49 +90,31 @@ class PEPHubClient:
             Downloaded project as object.
         """
         self._set_registry_data(query_string)
-        pephub_response = self._request_pephub(
-            method="GET", variables=variables, jwt_data=jwt_data
+        pephub_response = self.send_request(
+            method="GET",
+            url=self._build_request_url(variables),
+            cookies=self._get_cookies(jwt_data),
         )
         parsed_response = self._handle_pephub_response(pephub_response)
         return self._load_pep_project(parsed_response)
 
-    def _request_pephub(
-        self,
-        method: str,
-        url: Optional[str] = None,
-        headers: Optional[dict] = None,
-        variables: Optional[dict] = None,
-        jwt_data: Optional[str] = None,
-    ) -> requests.Response:
-        return requests.request(
-            method=method,
-            url=url or self._build_request_url(variables),
-            verify=False,
-            cookies=self._get_cookies(jwt_data),
-            headers=headers,
-        )
-
     @staticmethod
     def _handle_pephub_response(pephub_response: requests.Response):
-        decoded_response = decode_response(pephub_response)
+        decoded_response = PEPHubClient.decode_response(pephub_response)
 
-        if pephub_response.status_code in ERROR_CODES:
-            raise ResponseError(
-                message="The project does not exist or current user has no permissions to view it."
-            )
-        elif pephub_response.status_code != ResponseStatusCodes.OK_200:
+        if pephub_response.status_code != ResponseStatusCodes.OK_200:
             raise ResponseError(message=json.loads(decoded_response).get("detail"))
         else:
             return decoded_response
 
     def _request_jwt_from_pephub(self, client_data: ClientData) -> str:
-        pephub_response = self._request_pephub(
-            method=HTTPMethod.POST,
+        pephub_response = self.send_request(
+            method="POST",
             url=PEPHUB_BASE_URL + self.CLI_LOGIN_ENDPOINT,
             headers={"access-token": self.github_client.get_access_token(client_data)},
         )
         return JWTDataResponse(
-            **json.loads(decode_response(pephub_response))
+            **json.loads(PEPHubClient.decode_response(pephub_response))
         ).jwt_token
 
     def _set_registry_data(self, query_string: str) -> None:
@@ -153,7 +140,9 @@ class PEPHubClient:
             return {}
 
     def _load_pep_project(self, pep_project: str) -> peppy.Project:
-        FilesManager.save_pep_project(pep_project, self.registry_path, filename=self.DEFAULT_PROJECT_FILENAME)
+        FilesManager.save_pep_project(
+            pep_project, self.registry_path, filename=self.DEFAULT_PROJECT_FILENAME
+        )
         project = Project(self.DEFAULT_PROJECT_FILENAME)
         FilesManager.delete_file_if_exists(self.DEFAULT_PROJECT_FILENAME)
         return project
@@ -186,4 +175,3 @@ class PEPHubClient:
             parsed_variables.append(f"{variable_name}={variable_value}")
 
         return "?" + "&".join(parsed_variables)
-

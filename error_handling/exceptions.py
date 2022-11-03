@@ -15,7 +15,8 @@ class ResponseError(BasePephubclientException):
     default_message = "The response looks incorrect and must be verified manually."
 
     def __init__(self, message: str = None):
-        super().__init__(message or self.default_message)
+        self.message = message
+        super().__init__(self.message or self.default_message)
 
 
 class AuthorizationPendingError(BasePephubclientException):
