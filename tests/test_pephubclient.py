@@ -1,110 +1,80 @@
 import pytest
 from unittest.mock import Mock, patch, mock_open
-from pephubclient import PEPHubClient
-from pephubclient.constants import RegistryPath
-from pephubclient.exceptions import IncorrectQueryStringError
+from pephubclient.pephubclient import PEPHubClient
+from error_handling.exceptions import ResponseError
 
 
-@pytest.mark.parametrize("query_string", [""])
-def test_get_request_data_from_string_raises_error_for_incorrect_query_string(
-    query_string,
-):
-    with pytest.raises(IncorrectQueryStringError) as e:
-        PEPHubClient().set_registry_data(query_string)
-
-    assert e.value.query_string == query_string
-
-
-@pytest.mark.parametrize(
-    "query_string, expected_output",
-    [("geo/GSE124224", RegistryPath(namespace="geo", item="GSE124224"))],
-)
-def test_get_request_data_from_string_parses_data_correctly(
-    query_string, expected_output
-):
-    pep_hub_client = PEPHubClient()
-    pep_hub_client.set_registry_data(query_string)
-    assert pep_hub_client.registry_path_data == expected_output
-
-
-@pytest.mark.parametrize(
-    "variables, expected_url",
-    [
-        (
-            {"DATA": "test"},
-            "https://pephub.databio.org/pep/test_geo_project/test_name/convert?filter=csv?DATA=test",
-        ),
-        (
-            {"DATA": "test", "VARIABLE": "value"},
-            "https://pephub.databio.org/pep/test_geo_project/test_name/convert?filter=csv?DATA=test&VARIABLE=value",
-        ),
-        (
-            {},
-            "https://pephub.databio.org/pep/test_geo_project/test_name/convert?filter=csv",
-        ),
-    ],
-)
-def test_request_pephub_creates_correct_url(variables, expected_url, requests_get_mock):
-    pep_hub_client = PEPHubClient()
-    pep_hub_client.registry_path_data = RegistryPath(
-        namespace="test_geo_project", item="test_name"
+def test_login(mocker, test_jwt_response, test_client_data, test_access_token):
+    mocker.patch(
+        "github_oauth_client.github_oauth_client.GitHubOAuthClient.get_access_token",
+        return_value=test_access_token,
     )
-    pep_hub_client.request_pephub(variables)
-
-    requests_get_mock.assert_called_with(expected_url, verify=False)
-
-
-def test_load_pep(mocker, requests_get_mock):
-    save_response_mock = mocker.patch(
-        "pephubclient.pephubclient.PEPHubClient._save_response"
+    pephub_request_mock = mocker.patch(
+        "requests.request", return_value=Mock(content=test_jwt_response)
     )
-    delete_file_mock = mocker.patch(
-        "pephubclient.pephubclient.PEPHubClient._delete_file"
-    )
+    pathlib_mock = mocker.patch("pathlib.Path.mkdir")
 
-    PEPHubClient(filename_to_save=None).load_pep("test/querystring")
+    with patch("builtins.open", mock_open()) as open_mock:
+        PEPHubClient().login(client_data=test_client_data)
 
-    assert save_response_mock.called
-    assert delete_file_mock.called_with(None)
+    assert open_mock.called
+    assert pephub_request_mock.called
+    assert pathlib_mock.called
 
 
-def test_delete_file(mocker):
+def test_logout(mocker):
     os_remove_mock = mocker.patch("os.remove")
-    PEPHubClient()._delete_file("test-filename.csv")
+    PEPHubClient().logout()
+
     assert os_remove_mock.called
 
 
-def test_save_response():
-    with patch("builtins.open", mock_open()) as open_mock:
-        PEPHubClient()._save_response(Mock())
-    assert open_mock.called
-
-
-def test_save_pep_locally(mocker, requests_get_mock):
-    save_response_mock = mocker.patch(
-        "pephubclient.pephubclient.PEPHubClient._save_response"
+def test_pull(mocker, test_jwt):
+    mocker.patch(
+        "pephubclient.files_manager.FilesManager.load_jwt_data_from_file",
+        return_value=test_jwt,
     )
-    PEPHubClient().save_pep_locally("test/project")
+    mocker.patch(
+        "requests.request", return_value=Mock(content=b"some_data", status_code=200)
+    )
+    save_project_mock = mocker.patch(
+        "pephubclient.files_manager.FilesManager.save_pep_project"
+    )
 
-    assert save_response_mock.called
-    assert requests_get_mock.called
+    PEPHubClient().pull("some/project")
+
+    assert save_project_mock.called
 
 
 @pytest.mark.parametrize(
-    "registry_path, expected_filename",
+    "status_code, expected_error_message",
     [
         (
-            RegistryPath(namespace="test", item="project", tag="2022"),
-            "test_project:2022.csv",
+            404,
+            "Some error message",
         ),
-        (RegistryPath(namespace="test", item="project", tag=""), "test_project.csv"),
+        (
+            403,
+            "Some error message",
+        ),
+        (501, "Some error message"),
     ],
 )
-def test_create_filename_to_save_downloaded_project(registry_path, expected_filename):
-    pep_hub_client = PEPHubClient()
-    pep_hub_client.registry_path_data = registry_path
-
-    assert (
-        pep_hub_client._create_filename_to_save_downloaded_project()
-        == expected_filename
+def test_pull_with_pephub_error_response(
+    mocker, test_jwt, status_code, expected_error_message
+):
+    mocker.patch(
+        "pephubclient.files_manager.FilesManager.load_jwt_data_from_file",
+        return_value=test_jwt,
     )
+    mocker.patch(
+        "requests.request",
+        return_value=Mock(
+            content=b'{"detail": "Some error message"}', status_code=status_code
+        ),
+    )
+
+    with pytest.raises(ResponseError) as e:
+        PEPHubClient().pull("some/project")
+
+    assert e.value.message == expected_error_message

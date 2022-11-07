@@ -1,46 +1,57 @@
 import os
-from typing import Optional, Union
-import urllib3
+import json
+from typing import Optional
 import peppy
 import requests
+import urllib3
 from peppy import Project
 from pydantic.error_wrappers import ValidationError
 from ubiquerg import parse_registry_path
-
-from pephubclient.constants import PEPHUB_BASE_URL, RegistryPath, DEFAULT_FILENAME
-from pephubclient.exceptions import IncorrectQueryStringError
+from pephubclient.constants import (
+    PEPHUB_BASE_URL,
+    PEPHUB_PEP_API_BASE_URL,
+    RegistryPath,
+)
+from pephubclient.models import JWTDataResponse
+from pephubclient.models import ClientData
+from error_handling.exceptions import ResponseError, IncorrectQueryStringError
+from error_handling.constants import ResponseStatusCodes
+from github_oauth_client.github_oauth_client import GitHubOAuthClient
+from pephubclient.files_manager import FilesManager
+from helpers import RequestManager
 
 urllib3.disable_warnings()
 
 
-class PEPHubClient:
-    """
-    Main class responsible for providing Python interface for PEPhub.
-    """
-
+class PEPHubClient(RequestManager):
     CONVERT_ENDPOINT = "convert?filter=csv"
+    CLI_LOGIN_ENDPOINT = "auth/login_cli"
+    USER_DATA_FILE_NAME = "jwt.txt"
+    DEFAULT_PROJECT_FILENAME = "pep_project.csv"
+    PATH_TO_FILE_WITH_JWT = (
+        os.path.join(os.getenv("HOME"), ".pephubclient/") + USER_DATA_FILE_NAME
+    )
 
-    def __init__(self, filename_to_save: str = DEFAULT_FILENAME):
-        self.registry_path_data: Union[RegistryPath, None] = None
-        self.filename_to_save = filename_to_save
+    def __init__(self):
+        self.registry_path = None
+        self.github_client = GitHubOAuthClient()
 
-    def load_pep(self, query_string: str, variables: Optional[dict] = None) -> Project:
-        """
-        Request PEPhub and return the requested project as peppy.Project object.
+    def login(self, client_data: ClientData) -> None:
+        jwt = self._request_jwt_from_pephub(client_data)
+        FilesManager.save_jwt_data_to_file(self.PATH_TO_FILE_WITH_JWT, jwt)
 
-        Args:
-            query_string: Project namespace, eg. "geo/GSE124224"
-            variables: Optional variables to be passed to PEPhub
+    def logout(self) -> None:
+        FilesManager.delete_file_if_exists(self.PATH_TO_FILE_WITH_JWT)
 
-        Returns:
-            Downloaded project as object.
-        """
-        self.set_registry_data(query_string)
-        pephub_response = self.request_pephub(variables)
-        return self.parse_pephub_response(pephub_response)
+    def pull(self, project_query_string: str):
+        jwt = FilesManager.load_jwt_data_from_file(self.PATH_TO_FILE_WITH_JWT)
+        self._save_pep_locally(project_query_string, jwt)
 
-    def save_pep_locally(
-        self, query_string: str, variables: Optional[dict] = None
+    def _save_pep_locally(
+        self,
+        query_string: str,
+        jwt_data: Optional[str] = None,
+        variables: Optional[dict] = None,
     ) -> None:
         """
         Request PEPhub and save the requested project on the disk.
@@ -50,13 +61,63 @@ class PEPHubClient:
             variables: Optional variables to be passed to PEPhub
 
         """
-        self.set_registry_data(query_string)
-        pephub_response = self.request_pephub(variables)
-        filename = self._create_filename_to_save_downloaded_project()
-        self._save_response(pephub_response, filename)
-        print(f"File downloaded -> {os.path.join(os.getcwd(), filename)}")
+        self._set_registry_data(query_string)
+        pephub_response = self.send_request(
+            method="GET",
+            url=self._build_request_url(variables),
+            cookies=self._get_cookies(jwt_data),
+        )
+        decoded_response = self._handle_pephub_response(pephub_response)
+        FilesManager.save_pep_project(
+            decoded_response, registry_path=self.registry_path
+        )
 
-    def set_registry_data(self, query_string: str) -> None:
+    def _load_pep(
+        self,
+        query_string: str,
+        variables: Optional[dict] = None,
+        jwt_data: Optional[str] = None,
+    ) -> Project:
+        """
+        Request PEPhub and return the requested project as peppy.Project object.
+
+        Args:
+            query_string: Project namespace, eg. "geo/GSE124224"
+            variables: Optional variables to be passed to PEPhub
+            jwt_data: JWT token.
+
+        Returns:
+            Downloaded project as object.
+        """
+        self._set_registry_data(query_string)
+        pephub_response = self.send_request(
+            method="GET",
+            url=self._build_request_url(variables),
+            cookies=self._get_cookies(jwt_data),
+        )
+        parsed_response = self._handle_pephub_response(pephub_response)
+        return self._load_pep_project(parsed_response)
+
+    @staticmethod
+    def _handle_pephub_response(pephub_response: requests.Response):
+        decoded_response = PEPHubClient.decode_response(pephub_response)
+
+        if pephub_response.status_code != ResponseStatusCodes.OK_200:
+            raise ResponseError(message=json.loads(decoded_response).get("detail"))
+        else:
+            return decoded_response
+
+    def _request_jwt_from_pephub(self, client_data: ClientData) -> str:
+        pephub_response = self.send_request(
+            method="POST",
+            url=PEPHUB_BASE_URL + self.CLI_LOGIN_ENDPOINT,
+            headers={"access-token": self.github_client.get_access_token(client_data)},
+        )
+        return JWTDataResponse(
+            **json.loads(PEPHubClient.decode_response(pephub_response))
+        ).jwt_token
+
+    def _set_registry_data(self, query_string: str) -> None:
         """
         Parse provided query string to extract project name, sample name, etc.
 
@@ -67,50 +128,37 @@ class PEPHubClient:
             Parsed query string.
         """
         try:
-            self.registry_path_data = RegistryPath(**parse_registry_path(query_string))
+            self.registry_path = RegistryPath(**parse_registry_path(query_string))
         except (ValidationError, TypeError):
             raise IncorrectQueryStringError(query_string=query_string)
 
-    def request_pephub(self, variables: Optional[dict] = None) -> requests.Response:
-        """
-        Send request to PEPhub to obtain the project data.
+    @staticmethod
+    def _get_cookies(jwt_data: Optional[str] = None) -> dict:
+        if jwt_data:
+            return {"pephub_session": jwt_data}
+        else:
+            return {}
 
-        Args:
-            variables: Optional array of variables that will be passed to parametrize PEP project from PEPhub.
-        """
-        url = self._build_request_url()
-
-        if variables:
-            variables_string = PEPHubClient._parse_variables(variables)
-            url += variables_string
-        return requests.get(url, verify=False)
-
-    def parse_pephub_response(
-        self, pephub_response: requests.Response
-    ) -> peppy.Project:
-        """
-        Save the csv data as file, read this data and return as peppy.Project object.
-
-        Args:
-            pephub_response: Raw response object from PEPhub.
-
-        Returns:
-            Peppy project instance.
-        """
-        self._save_response(pephub_response, self.filename_to_save)
-        project = Project(self.filename_to_save)
-        self._delete_file(self.filename_to_save)
+    def _load_pep_project(self, pep_project: str) -> peppy.Project:
+        FilesManager.save_pep_project(
+            pep_project, self.registry_path, filename=self.DEFAULT_PROJECT_FILENAME
+        )
+        project = Project(self.DEFAULT_PROJECT_FILENAME)
+        FilesManager.delete_file_if_exists(self.DEFAULT_PROJECT_FILENAME)
         return project
 
-    def _build_request_url(self):
+    def _build_request_url(self, variables: dict) -> str:
         endpoint = (
-            self.registry_path_data.namespace
+            self.registry_path.namespace
             + "/"
-            + self.registry_path_data.item
+            + self.registry_path.item
             + "/"
             + PEPHubClient.CONVERT_ENDPOINT
         )
-        return PEPHUB_BASE_URL + endpoint
+        if variables:
+            variables_string = PEPHubClient._parse_variables(variables)
+            endpoint += variables_string
+        return PEPHUB_PEP_API_BASE_URL + endpoint
 
     @staticmethod
     def _parse_variables(pep_variables: dict) -> str:
@@ -127,38 +175,3 @@ class PEPHubClient:
             parsed_variables.append(f"{variable_name}={variable_value}")
 
         return "?" + "&".join(parsed_variables)
-
-    @staticmethod
-    def _save_response(
-        pephub_response: requests.Response, filename: str = DEFAULT_FILENAME
-    ) -> None:
-        with open(filename, "w") as f:
-            f.write(pephub_response.content.decode("utf-8"))
-
-    @staticmethod
-    def _delete_file(filename: str) -> None:
-        os.remove(filename)
-
-    def _create_filename_to_save_downloaded_project(self) -> str:
-        """
-        Takes query string and creates output filename to save the project to.
-
-        Args:
-            query_string: Query string that was used to find the project.
-
-        Returns:
-            Filename uniquely identifying the project.
-        """
-        filename = []
-
-        if self.registry_path_data.namespace:
-            filename.append(self.registry_path_data.namespace)
-        if self.registry_path_data.item:
-            filename.append(self.registry_path_data.item)
-
-        filename = "_".join(filename)
-
-        if self.registry_path_data.tag:
-            filename = filename + ":" + self.registry_path_data.tag
-
-        return filename + ".csv"
