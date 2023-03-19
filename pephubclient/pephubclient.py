@@ -14,11 +14,13 @@ from pephubclient.constants import (
 )
 from pephubclient.models import JWTDataResponse
 from pephubclient.models import ClientData
-from error_handling.exceptions import ResponseError, IncorrectQueryStringError
-from error_handling.constants import ResponseStatusCodes
-from github_oauth_client.github_oauth_client import GitHubOAuthClient
+# from error_handling.exceptions import ResponseError, IncorrectQueryStringError
+# from error_handling.constants import ResponseStatusCodes
+# from github_oauth_client.github_oauth_client import GitHubOAuthClient
 from pephubclient.files_manager import FilesManager
-from helpers import RequestManager
+from pephubclient.helpers import RequestManager
+
+from pephubclient.pephub_oauth.pephub_oauth import PEPHubAuth
 
 urllib3.disable_warnings()
 
@@ -34,11 +36,12 @@ class PEPHubClient(RequestManager):
 
     def __init__(self):
         self.registry_path = None
-        self.github_client = GitHubOAuthClient()
+        # self.github_client = GitHubOAuthClient()
 
-    def login(self, client_data: ClientData) -> None:
-        jwt = self._request_jwt_from_pephub(client_data)
-        FilesManager.save_jwt_data_to_file(self.PATH_TO_FILE_WITH_JWT, jwt)
+    @staticmethod
+    def login(self) -> None:
+        user_token = PEPHubAuth().login_to_pephub()
+        FilesManager.save_jwt_data_to_file(self.PATH_TO_FILE_WITH_JWT, user_token)
 
     def logout(self) -> None:
         FilesManager.delete_file_if_exists(self.PATH_TO_FILE_WITH_JWT)
@@ -98,14 +101,14 @@ class PEPHubClient(RequestManager):
         parsed_response = self._handle_pephub_response(pephub_response)
         return self._load_pep_project(parsed_response)
 
-    @staticmethod
-    def _handle_pephub_response(pephub_response: requests.Response):
-        decoded_response = PEPHubClient.decode_response(pephub_response)
-
-        if pephub_response.status_code != ResponseStatusCodes.OK_200:
-            raise ResponseError(message=json.loads(decoded_response).get("detail"))
-        else:
-            return decoded_response
+    # @staticmethod
+    # def _handle_pephub_response(pephub_response: requests.Response):
+    #     decoded_response = PEPHubClient.decode_response(pephub_response)
+    #
+    #     if pephub_response.status_code != ResponseStatusCodes.OK_200:
+    #         raise ResponseError(message=json.loads(decoded_response).get("detail"))
+    #     else:
+    #         return decoded_response
 
     def _request_jwt_from_pephub(self, client_data: ClientData) -> str:
         pephub_response = self.send_request(
@@ -130,7 +133,8 @@ class PEPHubClient(RequestManager):
         try:
             self.registry_path = RegistryPath(**parse_registry_path(query_string))
         except (ValidationError, TypeError):
-            raise IncorrectQueryStringError(query_string=query_string)
+            # raise IncorrectQueryStringError(query_string=query_string)
+            pass
 
     @staticmethod
     def _get_cookies(jwt_data: Optional[str] = None) -> dict:

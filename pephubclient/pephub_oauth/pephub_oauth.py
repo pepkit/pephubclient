@@ -23,14 +23,22 @@ class PEPHubAuth(RequestManager):
 
         time.sleep(2)
 
-        while True:
+        for i in range(3):
             try:
                 user_token = self._exchange_device_code_on_token(pephub_response.device_code)
             except PEPHubTokenExchangeException:
                 time.sleep(2)
             else:
+                print("Successfully logged in!")
                 return user_token
-
+        input("If you logged in, press enter to continue...")
+        try:
+            user_token = self._exchange_device_code_on_token(pephub_response.device_code)
+        except PEPHubTokenExchangeException:
+            print("You are not logged in")
+        else:
+            print("Successfully logged in!")
+            return user_token
 
     def _request_pephub_for_device_code(self) -> InitializeDeviceCodeResponse:
         """
@@ -72,7 +80,7 @@ class PEPHubAuth(RequestManager):
         Decode the response from GitHub and pack the returned data into appropriate model.
 
         Args:
-            response: Response from GitHub.
+            response: Response from PEPhub
             model: Model that the data will be packed to.
 
         Returns:
