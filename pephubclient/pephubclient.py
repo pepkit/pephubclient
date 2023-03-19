@@ -65,6 +65,7 @@ class PEPHubClient(RequestManager):
 
         """
         self._set_registry_data(query_string)
+        urlf = self._build_request_url(variables),
         pephub_response = self.send_request(
             method="GET",
             url=self._build_request_url(variables),
@@ -101,14 +102,14 @@ class PEPHubClient(RequestManager):
         parsed_response = self._handle_pephub_response(pephub_response)
         return self._load_pep_project(parsed_response)
 
-    # @staticmethod
-    # def _handle_pephub_response(pephub_response: requests.Response):
-    #     decoded_response = PEPHubClient.decode_response(pephub_response)
-    #
-    #     if pephub_response.status_code != ResponseStatusCodes.OK_200:
-    #         raise ResponseError(message=json.loads(decoded_response).get("detail"))
-    #     else:
-    #         return decoded_response
+    @staticmethod
+    def _handle_pephub_response(pephub_response: requests.Response):
+        decoded_response = PEPHubClient.decode_response(pephub_response)
+
+        # if pephub_response.status_code != ResponseStatusCodes.OK_200:
+        #     raise ResponseError(message=json.loads(decoded_response).get("detail"))
+        # else:
+        return decoded_response
 
     def _request_jwt_from_pephub(self, client_data: ClientData) -> str:
         pephub_response = self.send_request(
@@ -158,6 +159,7 @@ class PEPHubClient(RequestManager):
             + self.registry_path.item
             + "/"
             + PEPHubClient.CONVERT_ENDPOINT
+            + f"&tag={self.registry_path.tag}"
         )
         if variables:
             variables_string = PEPHubClient._parse_variables(variables)
