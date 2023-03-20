@@ -3,7 +3,7 @@ from typing import Optional
 
 import requests
 
-from error_handling.exceptions import ResponseError
+from pephubclient.exceptions import ResponseError
 
 
 class RequestManager:

@@ -1,5 +1,5 @@
 from typing import Optional
-
+from enum import Enum
 from pydantic import BaseModel
 
 # PEPHUB_BASE_URL = "https://pephub.databio.org/"
@@ -15,3 +15,9 @@ class RegistryPath(BaseModel):
     item: str
     subitem: Optional[str]
     tag: Optional[str]
+
+
+class ResponseStatusCodes(int, Enum):
+    FORBIDDEN_403 = 403
+    NOT_EXIST_404 = 404
+    OK_200 = 200

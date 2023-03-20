@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import Mock, patch, mock_open
 from pephubclient.pephubclient import PEPHubClient
-from error_handling.exceptions import ResponseError
+from pephubclient.exceptions import ResponseError
 
 
 def test_login(mocker, test_jwt_response, test_client_data, test_access_token):

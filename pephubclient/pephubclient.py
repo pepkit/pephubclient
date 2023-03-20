@@ -11,11 +11,10 @@ from pephubclient.constants import (
     PEPHUB_BASE_URL,
     PEPHUB_PEP_API_BASE_URL,
     RegistryPath,
+    ResponseStatusCodes
 )
 from pephubclient.models import JWTDataResponse
 from pephubclient.models import ClientData
-# from error_handling.exceptions import ResponseError, IncorrectQueryStringError
-# from error_handling.constants import ResponseStatusCodes
 from pephubclient.files_manager import FilesManager
 from pephubclient.helpers import RequestManager
 
@@ -109,10 +108,10 @@ class PEPHubClient(RequestManager):
     def _handle_pephub_response(pephub_response: requests.Response):
         decoded_response = PEPHubClient.decode_response(pephub_response)
 
-        # if pephub_response.status_code != ResponseStatusCodes.OK_200:
-        #     raise ResponseError(message=json.loads(decoded_response).get("detail"))
-        # else:
-        return decoded_response
+        if pephub_response.status_code != ResponseStatusCodes.OK_200:
+            raise ResponseError(message=json.loads(decoded_response).get("detail"))
+        else:
+            return decoded_response
 
     def _request_jwt_from_pephub(self, client_data: ClientData) -> str:
         pephub_response = self.send_request(
