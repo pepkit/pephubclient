@@ -16,7 +16,6 @@ from pephubclient.models import JWTDataResponse
 from pephubclient.models import ClientData
 # from error_handling.exceptions import ResponseError, IncorrectQueryStringError
 # from error_handling.constants import ResponseStatusCodes
-# from github_oauth_client.github_oauth_client import GitHubOAuthClient
 from pephubclient.files_manager import FilesManager
 from pephubclient.helpers import RequestManager
 
@@ -36,9 +35,7 @@ class PEPHubClient(RequestManager):
 
     def __init__(self):
         self.registry_path = None
-        # self.github_client = GitHubOAuthClient()
 
-    @staticmethod
     def login(self) -> None:
         user_token = PEPHubAuth().login_to_pephub()
         FilesManager.save_jwt_data_to_file(self.PATH_TO_FILE_WITH_JWT, user_token)
@@ -65,16 +62,21 @@ class PEPHubClient(RequestManager):
 
         """
         self._set_registry_data(query_string)
-        urlf = self._build_request_url(variables),
         pephub_response = self.send_request(
             method="GET",
             url=self._build_request_url(variables),
-            cookies=self._get_cookies(jwt_data),
+            headers=self._get_header(jwt_data),
+            cookies=None,
         )
-        decoded_response = self._handle_pephub_response(pephub_response)
-        FilesManager.save_pep_project(
-            decoded_response, registry_path=self.registry_path
-        )
+        if pephub_response.status_code == 200:
+            decoded_response = self._handle_pephub_response(pephub_response)
+            FilesManager.save_pep_project(
+                decoded_response, registry_path=self.registry_path
+            )
+        elif pephub_response.status_code == 404:
+            print("File doesn't exist, or are unauthorized.")
+        else:
+            print("Unknown error occurred.")
 
     def _load_pep(
         self,
@@ -97,7 +99,8 @@ class PEPHubClient(RequestManager):
         pephub_response = self.send_request(
             method="GET",
             url=self._build_request_url(variables),
-            cookies=self._get_cookies(jwt_data),
+            headers=self._get_header(jwt_data),
+            cookies=None,
         )
         parsed_response = self._handle_pephub_response(pephub_response)
         return self._load_pep_project(parsed_response)
@@ -138,9 +141,9 @@ class PEPHubClient(RequestManager):
             pass
 
     @staticmethod
-    def _get_cookies(jwt_data: Optional[str] = None) -> dict:
+    def _get_header(jwt_data: Optional[str] = None) -> dict:
         if jwt_data:
-            return {"pephub_session": jwt_data}
+            return {"Authorization": jwt_data}
         else:
             return {}
 

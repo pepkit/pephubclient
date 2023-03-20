@@ -4,7 +4,6 @@ from typing import Optional
 import requests
 
 from error_handling.exceptions import ResponseError
-from github_oauth_client.constants import ENCODING
 
 
 class RequestManager:
@@ -38,6 +37,6 @@ class RequestManager:
             Response data as an instance of correct model.
         """
         try:
-            return response.content.decode(ENCODING)
+            return response.content.decode("utf-8")
         except json.JSONDecodeError:
             raise ResponseError()
