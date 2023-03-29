@@ -1,7 +1,10 @@
 import os
 import json
-from typing import Optional, NoReturn
+from typing import Optional, NoReturn, List
+
+import pandas
 import peppy
+import pandas as pd
 import requests
 import urllib3
 from peppy import Project
@@ -23,10 +26,7 @@ urllib3.disable_warnings()
 
 
 class PEPHubClient(RequestManager):
-    CONVERT_ENDPOINT = "convert?filter=csv"
-    CLI_LOGIN_ENDPOINT = "auth/login_cli"
     USER_DATA_FILE_NAME = "jwt.txt"
-    DEFAULT_PROJECT_FILENAME = "pep_project.csv"
     PATH_TO_FILE_WITH_JWT = (
         os.path.join(os.getenv("HOME"), ".pephubclient/") + USER_DATA_FILE_NAME
     )
@@ -63,7 +63,10 @@ class PEPHubClient(RequestManager):
         :return: None
         """
         jwt_data = FilesManager.load_jwt_data_from_file(self.PATH_TO_FILE_WITH_JWT)
-        self._save_pep_locally(project_registry_path, jwt_data, project_format)
+        project_dict = self._load_raw_pep(registry_path=project_registry_path, jwt_data=jwt_data)
+
+        self._save_raw_pep(reg_path=project_registry_path, project_dict=project_dict, force=force)
+
 
     def load_project(
         self,
@@ -131,6 +134,63 @@ class PEPHubClient(RequestManager):
         :return: None
         """
         ...
+
+    @staticmethod
+    def _save_raw_pep(
+            reg_path: str,
+            project_dict: dict,
+            force: bool = False,
+    ) -> None:
+        """
+
+        :param project_dict:
+        :param force:
+        :return:
+        """
+        project_name = project_dict["name"]
+
+        config_dict = project_dict.get("_config")
+        config_dict["name"] = project_name
+        config_dict["description"] = project_dict["description"]
+        config_dict['sample_table'] = "sample_table.csv"
+
+        sample_dict = project_dict.get("_sample_dict")
+        sample_pandas = pd.DataFrame(sample_dict)
+
+        if project_dict.get("_subsample_dict"):
+            subsample_list = [
+                pd.DataFrame(sub_a)
+                for sub_a in project_dict["_subsample_dict"]
+            ]
+            config_dict['subsample_table'] = "subsample_table.csv"
+        else:
+            subsample_list = None
+        reg_path_model = RegistryPath(**parse_registry_path(reg_path))
+        folder_path = FilesManager.crete_registry_folder(registry_path=reg_path_model)
+
+        yaml_full_path = os.path.join(folder_path, f"{project_name}_config.yaml")
+        sample_full_path = os.path.join(folder_path, config_dict['sample_table'])
+
+        if FilesManager.file_exists(yaml_full_path) or FilesManager.file_exists(sample_full_path):
+            if not force:
+                print(f"Project {folder_path}")
+                # TODO: raise exception
+
+        FilesManager.save_yaml(config_dict, yaml_full_path, force=True)
+        FilesManager.save_pandas(sample_pandas, sample_full_path, force=True)
+
+
+
+
+        if config_dict.get('subsample_table'):
+            subsample_full_path = os.path.join(folder_path, config_dict['subsample_table'])
+
+            for subsample in subsample_list:
+                FilesManager.save_pandas(subsample, subsample_full_path, force=True)
+
+                break
+
+        return 0
 
 
     def _save_pep_locally(

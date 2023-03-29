@@ -2,6 +2,9 @@ import pathlib
 from contextlib import suppress
 import os
 from typing import Optional
+import yaml
+import pandas
+
 from pephubclient.constants import RegistryPath
 
 
@@ -20,6 +23,31 @@ class FilesManager:
         with suppress(FileNotFoundError):
             with open(path, "r") as f:
                 return f.read()
+
+    @staticmethod
+    def crete_registry_folder(registry_path: RegistryPath) -> str:
+        """
+        Create new project folder
+        :param name: folder name
+        :return: folder_path
+        """
+        folder_name = FilesManager._create_filename_to_save_downloaded_project(registry_path)
+        folder_path = os.path.join(os.path.join(os.getcwd(), folder_name))
+        pathlib.Path(folder_path).mkdir(parents=True, exist_ok=True)
+        return folder_path
+
+    @staticmethod
+    def save_yaml(config: dict, full_path: str, force: bool = True):
+        with open(full_path, 'w') as outfile:
+            yaml.dump(config, outfile, default_flow_style=False)
+
+    @staticmethod
+    def save_pandas(df: pandas.DataFrame, full_path: str, force: bool = True):
+        df.to_csv(full_path, index=False)
+
+    @staticmethod
+    def file_exists(full_path: str) -> bool:
+        return os.path.isfile(full_path)
 
     @staticmethod
     def delete_file_if_exists(filename: str) -> None:
@@ -60,4 +88,6 @@ class FilesManager:
         if registry_path.tag:
             filename = filename + ":" + registry_path.tag
 
-        return filename + ".csv"
+        return filename
+
+
