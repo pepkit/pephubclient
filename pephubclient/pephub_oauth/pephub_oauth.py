@@ -5,10 +5,18 @@ import time
 from pydantic import BaseModel
 
 from pephubclient.helpers import RequestManager
-from pephubclient.pephub_oauth.const import PEPHUB_DEVICE_INIT_URI, PEPHUB_DEVICE_TOKEN_URI
-from pephubclient.pephub_oauth.models import InitializeDeviceCodeResponse, PEPHubDeviceTokenResponse
-from pephubclient.pephub_oauth.exceptions import PEPHubResponseException, PEPHubTokenExchangeException
-
+from pephubclient.pephub_oauth.const import (
+    PEPHUB_DEVICE_INIT_URI,
+    PEPHUB_DEVICE_TOKEN_URI,
+)
+from pephubclient.pephub_oauth.models import (
+    InitializeDeviceCodeResponse,
+    PEPHubDeviceTokenResponse,
+)
+from pephubclient.pephub_oauth.exceptions import (
+    PEPHubResponseException,
+    PEPHubTokenExchangeException,
+)
 
 
 class PEPHubAuth(RequestManager):
@@ -18,14 +26,18 @@ class PEPHubAuth(RequestManager):
 
     def login_to_pephub(self):
         pephub_response = self._request_pephub_for_device_code()
-        print(f"User verification code: {pephub_response.device_code}, please go to the website: "
-              f"{pephub_response.auth_url} to authenticate.")
+        print(
+            f"User verification code: {pephub_response.device_code}, please go to the website: "
+            f"{pephub_response.auth_url} to authenticate."
+        )
 
         time.sleep(2)
 
         for i in range(3):
             try:
-                user_token = self._exchange_device_code_on_token(pephub_response.device_code)
+                user_token = self._exchange_device_code_on_token(
+                    pephub_response.device_code
+                )
             except PEPHubTokenExchangeException:
                 time.sleep(2)
             else:
@@ -33,7 +45,9 @@ class PEPHubAuth(RequestManager):
                 return user_token
         input("If you logged in, press enter to continue...")
         try:
-            user_token = self._exchange_device_code_on_token(pephub_response.device_code)
+            user_token = self._exchange_device_code_on_token(
+                pephub_response.device_code
+            )
         except PEPHubTokenExchangeException:
             print("You are not logged in")
         else:
@@ -50,9 +64,7 @@ class PEPHubAuth(RequestManager):
             params=None,
             headers=None,
         )
-        return self._handle_pephub_response(
-            response, InitializeDeviceCodeResponse
-        )
+        return self._handle_pephub_response(response, InitializeDeviceCodeResponse)
         # return "device code"
 
     def _exchange_device_code_on_token(self, device_code: str) -> str:
@@ -73,8 +85,7 @@ class PEPHubAuth(RequestManager):
 
     @staticmethod
     def _handle_pephub_response(
-            response: requests.Response,
-            model: Type[BaseModel]
+        response: requests.Response, model: Type[BaseModel]
     ) -> Union[BaseModel, InitializeDeviceCodeResponse, PEPHubDeviceTokenResponse]:
         """
         Decode the response from GitHub and pack the returned data into appropriate model.
@@ -99,9 +110,3 @@ class PEPHubAuth(RequestManager):
             return model(**content)
         except Exception:
             raise Exception()
-
-
-
-
-
-

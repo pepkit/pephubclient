@@ -1,6 +1,6 @@
 import os
 import json
-from typing import Optional
+from typing import Optional, NoReturn
 import peppy
 import requests
 import urllib3
@@ -11,10 +11,9 @@ from pephubclient.constants import (
     PEPHUB_BASE_URL,
     PEPHUB_PEP_API_BASE_URL,
     RegistryPath,
-    ResponseStatusCodes
+    ResponseStatusCodes,
 )
-from pephubclient.models import JWTDataResponse
-from pephubclient.models import ClientData
+from pephubclient.models import ProjectDict
 from pephubclient.files_manager import FilesManager
 from pephubclient.helpers import RequestManager
 
@@ -35,35 +34,121 @@ class PEPHubClient(RequestManager):
     def __init__(self):
         self.registry_path = None
 
-    def login(self) -> None:
+    def login(self) -> NoReturn:
+        """
+        Log in to PEPhub
+        :return: None
+        """
         user_token = PEPHubAuth().login_to_pephub()
         FilesManager.save_jwt_data_to_file(self.PATH_TO_FILE_WITH_JWT, user_token)
 
-    def logout(self) -> None:
+    def logout(self) -> NoReturn:
+        """
+        Log out from PEPhub
+        :return: NoReturn
+        """
         FilesManager.delete_file_if_exists(self.PATH_TO_FILE_WITH_JWT)
 
-    def pull(self, project_query_string: str):
+    def pull(
+        self,
+        project_registry_path: str,
+        project_format: Optional[str] = "default",
+        force: Optional[bool] = False
+    ) -> None:
+        """
+        Downl
+        :param str project_registry_path: Project registry path in PEPhub (e.g. databio/base:default)
+        :param str project_format: project format to be saved. Options: [default, zip]
+        :param bool force: if project exists, overwrite it.
+        :return: None
+        """
+        jwt_data = FilesManager.load_jwt_data_from_file(self.PATH_TO_FILE_WITH_JWT)
+        self._save_pep_locally(project_registry_path, jwt_data, project_format)
+
+    def load_project(
+        self,
+        project_registry_path: str,
+        query_param: Optional[dict] = None,
+    ) -> peppy.Project:
+        """
+        Load peppy project from PEPhub in peppy.Project object
+        :param project_registry_path: registry path of the project
+        :param query_param: query parameters used in get request
+        :return Project: peppy project.
+        """
         jwt = FilesManager.load_jwt_data_from_file(self.PATH_TO_FILE_WITH_JWT)
-        self._save_pep_locally(project_query_string, jwt)
+        raw_pep = self._load_raw_pep(project_registry_path, jwt, query_param)
+        peppy_project = peppy.Project().from_dict(raw_pep)
+        return peppy_project
+
+    def push(
+        self,
+        cfg: str,
+        namespace: str,
+        name: Optional[str] = None,
+        tag: Optional[str] = None,
+        is_private: Optional[bool] = False,
+        force: Optional[bool] = False,
+    ) -> None:
+        """
+        Push (upload/update) project to Pephub using config/csv path
+        :param str cfg: Project config file (YAML) or sample table (CSV/TSV)
+            with one row per sample to constitute project
+        :param str namespace: namespace
+        :param str name: project name
+        :param str tag: project tag
+        :param bool is_private: Specifies whether project should be private [Default= False]
+        :param bool force: Force push to the database. Use it to update, or upload project. [Default= False]
+        :return: None
+        """
+        peppy_project = peppy.Project(cfg=cfg)
+
+        self.upload(project=peppy_project,
+                    namespace=namespace,
+                    name=name,
+                    tag=tag,
+                    is_private=is_private,
+                    force=force,)
+
+    def upload(
+        self,
+        project: peppy.Project,
+        namespace: str,
+        name: str = None,
+        tag: str = None,
+        is_private: bool = False,
+        force: bool = True,
+    ) -> None:
+        """
+        Upload peppy project to the PEPhub.
+        :param peppy.Project project: Project object that has to be uploaded to the DB
+        :param namespace: namespace
+        :param name: project name
+        :param tag: project tag
+        :param force: Force push to the database. Use it to update, or upload project.
+        :param is_private:
+        :param force:
+        :return: None
+        """
+        ...
+
 
     def _save_pep_locally(
         self,
-        query_string: str,
+        registry_path: str,
         jwt_data: Optional[str] = None,
-        variables: Optional[dict] = None,
+        query_param: dict = None
     ) -> None:
         """
         Request PEPhub and save the requested project on the disk.
 
-        Args:
-            query_string: Project namespace, eg. "geo/GSE124224"
-            variables: Optional variables to be passed to PEPhub
-
+        :param registry_path: Project namespace, eg. "geo/GSE124224"
         """
-        self._set_registry_data(query_string)
+        query_param = {"raw": "true"}
+        self._set_registry_data(registry_path)
         pephub_response = self.send_request(
             method="GET",
-            url=self._build_request_url(variables),
+            url=self._build_pull_request_url(query_param=query_param),
             headers=self._get_header(jwt_data),
             cookies=None,
         )
@@ -73,65 +158,58 @@ class PEPHubClient(RequestManager):
                 decoded_response, registry_path=self.registry_path
             )
         elif pephub_response.status_code == 404:
-            print("File doesn't exist, or are unauthorized.")
+            print("File does not exist, or you are unauthorized.")
+        elif pephub_response.status_code == 500:
+            print("Internal server error.")
         else:
-            print("Unknown error occurred.")
+            print(f"Unknown error occurred. Status: {pephub_response.status_code}")
 
-    def _load_pep(
+    def _load_raw_pep(
         self,
-        query_string: str,
-        variables: Optional[dict] = None,
+        registry_path: str,
         jwt_data: Optional[str] = None,
-    ) -> Project:
+        query_param: Optional[dict] = None,
+    ) -> dict:
         """
         Request PEPhub and return the requested project as peppy.Project object.
 
-        Args:
-            query_string: Project namespace, eg. "geo/GSE124224"
-            variables: Optional variables to be passed to PEPhub
-            jwt_data: JWT token.
+        :param registry_path: Project namespace, eg. "geo/GSE124224:tag"
+        :param query_param: Optional variables to be passed to PEPhub
+        :param jwt_data: JWT token.
 
-        Returns:
-            Downloaded project as object.
+        :return: Raw project in dict.
         """
-        self._set_registry_data(query_string)
+        if not query_param:
+            query_param = {}
+        query_param["raw"] = "true"
+
+        self._set_registry_data(registry_path)
         pephub_response = self.send_request(
             method="GET",
-            url=self._build_request_url(variables),
+            url=self._build_pull_request_url(query_param=query_param),
             headers=self._get_header(jwt_data),
             cookies=None,
         )
-        parsed_response = self._handle_pephub_response(pephub_response)
-        return self._load_pep_project(parsed_response)
+        if pephub_response.status_code == 200:
+            decoded_response = self._handle_pephub_response(pephub_response)
+            correct_proj_dict = ProjectDict(**json.loads(decoded_response))
 
-    @staticmethod
-    def _handle_pephub_response(pephub_response: requests.Response):
-        decoded_response = PEPHubClient.decode_response(pephub_response)
+            # This step is necessary because of this issue: https://github.com/pepkit/pephub/issues/124
+            return correct_proj_dict.dict(by_alias=True)
 
-        if pephub_response.status_code != ResponseStatusCodes.OK_200:
-            raise ResponseError(message=json.loads(decoded_response).get("detail"))
+        elif pephub_response.status_code == 404:
+            print("File does not exist, or you are unauthorized.")
+        elif pephub_response.status_code == 500:
+            print("Internal server error.")
         else:
-            return decoded_response
-
-    def _request_jwt_from_pephub(self, client_data: ClientData) -> str:
-        pephub_response = self.send_request(
-            method="POST",
-            url=PEPHUB_BASE_URL + self.CLI_LOGIN_ENDPOINT,
-            headers={"access-token": self.github_client.get_access_token(client_data)},
-        )
-        return JWTDataResponse(
-            **json.loads(PEPHubClient.decode_response(pephub_response))
-        ).jwt_token
+            print(f"Unknown error occurred. Status: {pephub_response.status_code}")
 
     def _set_registry_data(self, query_string: str) -> None:
         """
         Parse provided query string to extract project name, sample name, etc.
 
-        Args:
-            query_string: Passed by user. Contain information needed to locate the project.
-
-        Returns:
-            Parsed query string.
+        :param query_string: Passed by user. Contain information needed to locate the project.
+        :return: Parsed query string.
         """
         try:
             self.registry_path = RegistryPath(**parse_registry_path(query_string))
@@ -154,32 +232,55 @@ class PEPHubClient(RequestManager):
         FilesManager.delete_file_if_exists(self.DEFAULT_PROJECT_FILENAME)
         return project
 
-    def _build_request_url(self, variables: dict) -> str:
+    def _build_pull_request_url(self, query_param: dict = None) -> str:
+        if not query_param:
+            query_param = {}
+        query_param["tag"] = self.registry_path.tag
         endpoint = (
-            self.registry_path.namespace
-            + "/"
-            + self.registry_path.item
-            + "/"
-            + PEPHubClient.CONVERT_ENDPOINT
-            + f"&tag={self.registry_path.tag}"
+                self.registry_path.namespace
+                + "/"
+                + self.registry_path.item
         )
-        if variables:
-            variables_string = PEPHubClient._parse_variables(variables)
+        if query_param:
+            variables_string = PEPHubClient._parse_query_param(query_param)
+            endpoint += variables_string
+        return PEPHUB_PEP_API_BASE_URL + endpoint
+
+    def _build_zip_request_url(self, query_param: dict = None) -> str:
+        if not query_param:
+            query_param = {}
+        query_param["tag"] = self.registry_path.tag
+        endpoint = (
+                self.registry_path.namespace
+                + "/"
+                + self.registry_path.item
+                + "/"
+                + "zip"
+        )
+        if query_param:
+            variables_string = PEPHubClient._parse_query_param(query_param)
             endpoint += variables_string
         return PEPHUB_PEP_API_BASE_URL + endpoint
 
     @staticmethod
-    def _parse_variables(pep_variables: dict) -> str:
+    def _parse_query_param(pep_variables: dict) -> str:
         """
         Grab all the variables passed by user (if any) and parse them to match the format specified
         by PEPhub API for query parameters.
 
-        Returns:
-            PEPHubClient variables transformed into string in correct format.
+        :return: PEPHubClient variables transformed into string in correct format.
         """
         parsed_variables = []
 
         for variable_name, variable_value in pep_variables.items():
             parsed_variables.append(f"{variable_name}={variable_value}")
-
         return "?" + "&".join(parsed_variables)
+
+    @staticmethod
+    def _handle_pephub_response(pephub_response: requests.Response):
+        decoded_response = PEPHubClient.decode_response(pephub_response)
+
+        # if pephub_response.status_code != ResponseStatusCodes.OK_200:
+        #     raise ResponseError(message=json.loads(decoded_response).get("detail"))
+        # else:
+        return decoded_response

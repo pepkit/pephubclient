@@ -9,6 +9,7 @@ REQDIR = "requirements"
 # Additional keyword arguments for setup().
 extra = {}
 
+
 # Ordinary dependencies
 def read_reqs(reqs_name):
     deps = []
@@ -49,7 +50,7 @@ setup(
     license="BSD2",
     entry_points={
         "console_scripts": [
-            "pephubclient = pephubclient.__main__:main",
+            "phc = pephubclient.__main__:main",
         ],
     },
     package_data={PACKAGE: ["templates/*"]},

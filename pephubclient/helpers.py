@@ -1,6 +1,5 @@
 import json
 from typing import Optional
-
 import requests
 
 from pephubclient.exceptions import ResponseError
@@ -29,12 +28,8 @@ class RequestManager:
         """
         Decode the response from GitHub and pack the returned data into appropriate model.
 
-        Args:
-            response: Response from GitHub.
-            model: Model that the data will be packed to.
-
-        Returns:
-            Response data as an instance of correct model.
+        :param response: Response from GitHub.
+        :return: Response data as an instance of correct model.
         """
         try:
             return response.content.decode("utf-8")
