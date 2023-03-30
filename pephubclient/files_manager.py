@@ -6,6 +6,7 @@ import yaml
 import pandas
 
 from pephubclient.constants import RegistryPath
+from pephubclient.exceptions import PEPExistsError
 
 
 class FilesManager:
@@ -38,11 +39,15 @@ class FilesManager:
 
     @staticmethod
     def save_yaml(config: dict, full_path: str, force: bool = True):
+        if FilesManager.file_exists(full_path) and not force:
+            raise PEPExistsError("Yaml file already exists. File won't be updated")
         with open(full_path, 'w') as outfile:
             yaml.dump(config, outfile, default_flow_style=False)
 
     @staticmethod
     def save_pandas(df: pandas.DataFrame, full_path: str, force: bool = True):
+        if FilesManager.file_exists(full_path) and not force:
+            raise PEPExistsError("Csv file already exists. File won't be updated")
         df.to_csv(full_path, index=False)
 
     @staticmethod

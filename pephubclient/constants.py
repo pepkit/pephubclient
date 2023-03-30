@@ -3,10 +3,9 @@ from enum import Enum
 from pydantic import BaseModel
 
 # PEPHUB_BASE_URL = "https://pephub.databio.org/"
-# PEPHUB_PEP_API_BASE_URL = "https://pephub.databio.org/pep/"
-# PEPHUB_LOGIN_URL = "https://pephub.databio.org/auth/login"
 PEPHUB_BASE_URL = "http://0.0.0.0:8000/"
-PEPHUB_PEP_API_BASE_URL = "http://0.0.0.0:8000/api/v1/projects/"
+PEPHUB_PEP_API_BASE_URL = f"{PEPHUB_BASE_URL}api/v1/projects/"
+PEPHUB_PUSH_URL = f"{PEPHUB_BASE_URL}api/v1/namespaces/{{namespace}}/projects/json"
 
 
 class RegistryPath(BaseModel):

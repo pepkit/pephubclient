@@ -2,22 +2,20 @@ import os
 import json
 from typing import Optional, NoReturn, List
 
-import pandas
 import peppy
 import pandas as pd
 import requests
 from requests.exceptions import ConnectionError
 import urllib3
-from peppy import Project
 from pydantic.error_wrappers import ValidationError
 from ubiquerg import parse_registry_path
 from pephubclient.constants import (
-    PEPHUB_BASE_URL,
     PEPHUB_PEP_API_BASE_URL,
+    PEPHUB_PUSH_URL,
     RegistryPath,
     ResponseStatusCodes,
 )
-from pephubclient.models import ProjectDict
+from pephubclient.models import ProjectDict, ProjectUploadData
 from pephubclient.files_manager import FilesManager
 from pephubclient.helpers import RequestManager
 from pephubclient.exceptions import (
@@ -46,11 +44,7 @@ class PEPHubClient(RequestManager):
         Log in to PEPhub
         :return: None
         """
-        try:
-            user_token = PEPHubAuth().login_to_pephub()
-        except ConnectionError:
-            MessageHandler.print_error("Failed to log in. Connection Error. Try later.")
-            return 1
+        user_token = PEPHubAuth().login_to_pephub()
 
         FilesManager.save_jwt_data_to_file(self.PATH_TO_FILE_WITH_JWT, user_token)
 
@@ -75,17 +69,10 @@ class PEPHubClient(RequestManager):
         :return: None
         """
         jwt_data = FilesManager.load_jwt_data_from_file(self.PATH_TO_FILE_WITH_JWT)
-        try:
-            project_dict = self._load_raw_pep(registry_path=project_registry_path, jwt_data=jwt_data)
+        project_dict = self._load_raw_pep(registry_path=project_registry_path, jwt_data=jwt_data)
 
-        except ConnectionError:
-            MessageHandler.print_error("Failed to download PEP. Connection Error. Try later.")
-            return None
+        self._save_raw_pep(reg_path=project_registry_path, project_dict=project_dict, force=force)
 
-        try:
-            self._save_raw_pep(reg_path=project_registry_path, project_dict=project_dict, force=force)
-        except PEPExistsError as err:
-            MessageHandler.print_warning(f"PEP '{project_registry_path}' already exists. {err}")
 
     def load_project(
         self,
@@ -124,7 +111,6 @@ class PEPHubClient(RequestManager):
         :return: None
         """
         peppy_project = peppy.Project(cfg=cfg)
-
         self.upload(project=peppy_project,
                     namespace=namespace,
                     name=name,
@@ -152,7 +138,32 @@ class PEPHubClient(RequestManager):
         :param force:
         :return: None
         """
-        ...
+        jwt_data = FilesManager.load_jwt_data_from_file(self.PATH_TO_FILE_WITH_JWT)
+        if name:
+            project["name"] = name
+
+        upload_data = ProjectUploadData(
+            pep_dict=project.to_dict(extended=True),
+            tag=tag,
+            is_private=is_private,
+            overwrite=force,
+
+        )
+        pephub_response = self.send_request(
+            method="POST",
+            url=self._build_push_request_url(namespace=namespace),
+            headers=self._get_header(jwt_data),
+            json=upload_data.dict(),
+            cookies=None,
+        )
+        if pephub_response.status_code == 202:
+            MessageHandler.print_success(f"Project '{namespace}/{name}:{tag}' was successfully uploaded")
+        elif pephub_response.status_code == 409:
+            MessageHandler.print_error("Project already exists. Set force to overwrite project.")
+        elif pephub_response.status_code == 401:
+            MessageHandler.print_error("Unauthorized! Failure in uploading project.")
+        else:
+            MessageHandler.print_error("Unexpected Error.")
 
     @staticmethod
     def _save_raw_pep(
@@ -161,10 +172,10 @@ class PEPHubClient(RequestManager):
             force: bool = False,
     ) -> None:
         """
-
-        :param project_dict:
-        :param force:
-        :return:
+        Save project locally.
+        :param dict project_dict: PEP dictionary (raw project)
+        :param bool force: overwrite project if exists
+        :return: None
         """
         project_name = project_dict["name"]
 
@@ -243,11 +254,11 @@ class PEPHubClient(RequestManager):
             return correct_proj_dict.dict(by_alias=True)
 
         elif pephub_response.status_code == 404:
-            print("File does not exist, or you are unauthorized.")
+            MessageHandler.print_error("File does not exist, or you are unauthorized.")
         elif pephub_response.status_code == 500:
-            print("Internal server error.")
+            MessageHandler.print_error("Internal server error.")
         else:
-            print(f"Unknown error occurred. Status: {pephub_response.status_code}")
+            MessageHandler.print_error(f"Unknown error occurred. Status: {pephub_response.status_code}")
 
     def _set_registry_data(self, query_string: str) -> None:
         """
@@ -281,6 +292,10 @@ class PEPHubClient(RequestManager):
             variables_string = PEPHubClient._parse_query_param(query_param)
             endpoint += variables_string
         return PEPHUB_PEP_API_BASE_URL + endpoint
+
+    @staticmethod
+    def _build_push_request_url(namespace: str) -> str:
+        return PEPHUB_PUSH_URL.format(namespace=namespace)
 
     @staticmethod
     def _parse_query_param(pep_variables: dict) -> str:

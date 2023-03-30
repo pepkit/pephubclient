@@ -13,6 +13,7 @@ class RequestManager:
         headers: Optional[dict] = None,
         cookies: Optional[dict] = None,
         params: Optional[dict] = None,
+        json: Optional[dict] = None,
     ) -> requests.Response:
         return requests.request(
             method=method,
@@ -21,6 +22,7 @@ class RequestManager:
             cookies=cookies,
             headers=headers,
             params=params,
+            json=json,
         )
 
     @staticmethod
