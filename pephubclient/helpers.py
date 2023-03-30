@@ -1,5 +1,5 @@
 import json
-from typing import Optional
+from typing import Optional, NoReturn
 import requests
 
 from pephubclient.exceptions import ResponseError
@@ -35,3 +35,21 @@ class RequestManager:
             return response.content.decode("utf-8")
         except json.JSONDecodeError:
             raise ResponseError()
+
+
+class MessageHandler:
+    RED = 9
+    YELLOW = 11
+    GREEN = 40
+
+    @staticmethod
+    def print_error(text: str) -> NoReturn:
+        print(f"\033[38;5;9m{text}\033[0m")
+
+    @staticmethod
+    def print_success(text: str) -> NoReturn:
+        print(f"\033[38;5;40m{text}\033[0m")
+
+    @staticmethod
+    def print_warning(text: str) -> NoReturn:
+        print(f"\033[38;5;11m{text}\033[0m")
