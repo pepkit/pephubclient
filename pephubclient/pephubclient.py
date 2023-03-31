@@ -128,8 +128,8 @@ class PEPHubClient(RequestManager):
         :param name: project name
         :param tag: project tag
         :param force: Force push to the database. Use it to update, or upload project.
-        :param is_private:
-        :param force:
+        :param is_private: Make project private
+        :param force: overwrite project if it exists
         :return: None
         """
         jwt_data = FilesManager.load_jwt_data_from_file(self.PATH_TO_FILE_WITH_JWT)
@@ -151,7 +151,7 @@ class PEPHubClient(RequestManager):
             cookies=None,
         )
         if pephub_response.status_code == 202:
-            MessageHandler.print_success(f"Project '{namespace}/{name}:{tag}' was successfully uploaded")
+            MessageHandler.print_success(f"Project '{namespace}/{name}:{upload_data.tag}' was successfully uploaded")
         elif pephub_response.status_code == 409:
             MessageHandler.print_error("Project already exists. Set force to overwrite project.")
         elif pephub_response.status_code == 401:
@@ -221,7 +221,7 @@ class PEPHubClient(RequestManager):
         jwt_data: Optional[str] = None,
         query_param: Optional[dict] = None,
     ) -> dict:
-        """
+        """ project_name
         Request PEPhub and return the requested project as peppy.Project object.
         :param registry_path: Project namespace, eg. "geo/GSE124224:tag"
         :param query_param: Optional variables to be passed to PEPhub
@@ -285,6 +285,7 @@ class PEPHubClient(RequestManager):
         if not query_param:
             query_param = {}
         query_param["tag"] = self.registry_path.tag
+
         endpoint = (
                 self.registry_path.namespace
                 + "/"

@@ -1,6 +1,6 @@
 from typing import Optional
 from enum import Enum
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 
 # PEPHUB_BASE_URL = "https://pephub.databio.org/"
 PEPHUB_BASE_URL = "http://0.0.0.0:8000/"
@@ -13,7 +13,13 @@ class RegistryPath(BaseModel):
     namespace: str
     item: str
     subitem: Optional[str]
-    tag: Optional[str]
+    tag: Optional[str] = "default"
+
+    @validator('tag')
+    def tag_should_not_be_none(cls, v):
+        if v:
+            return v
+        return "default"
 
 
 class ResponseStatusCodes(int, Enum):

@@ -34,15 +34,15 @@ def logout():
 @app.command()
 def pull(
     project_registry_path: str,
-    project_format: str = typer.Option("default", help="Project format in which project should be saved"
-                                                       "Options: [default, basic, csv, yaml, zip]."),
+    # project_format: str = typer.Option("default", help="Project format in which project should be saved"
+    #                                                    "Options: [default, basic, csv, yaml, zip]."),
     force: bool = typer.Option(False, help="Last name of person to greet."),
 ):
     """
     Download and save project locally.
     """
     try:
-        pep_hub_client.pull(project_registry_path, project_format, force)
+        pep_hub_client.pull(project_registry_path, force)
 
     except ConnectionError:
         MessageHandler.print_error("Failed to download project. Connection Error. Try later.")
