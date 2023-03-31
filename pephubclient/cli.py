@@ -15,13 +15,12 @@ app = typer.Typer()
 @app.command()
 def login():
     """
-    Login to Pephub
+    Login to PEPhub
     """
     try:
         pep_hub_client.login()
     except ConnectionError:
         MessageHandler.print_error("Failed to log in. Connection Error. Try later.")
-
 
 
 @app.command()
@@ -35,7 +34,6 @@ def logout():
 @app.command()
 def pull(
     project_registry_path: str,
-    # output_dir: str = typer.Option(None, help="Specify the location where the file should be saved"),
     project_format: str = typer.Option("default", help="Project format in which project should be saved"
                                                        "Options: [default, basic, csv, yaml, zip]."),
     force: bool = typer.Option(False, help="Last name of person to greet."),
@@ -88,4 +86,7 @@ def push(
 
 @app.command()
 def version():
+    """
+    Package version
+    """
     print(f"{__app_name__} v{__version__}")

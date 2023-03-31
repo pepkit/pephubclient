@@ -1,11 +1,10 @@
 import os
 import json
-from typing import Optional, NoReturn, List
+from typing import Optional, NoReturn
 
 import peppy
 import pandas as pd
 import requests
-from requests.exceptions import ConnectionError
 import urllib3
 from pydantic.error_wrappers import ValidationError
 from ubiquerg import parse_registry_path
@@ -42,7 +41,6 @@ class PEPHubClient(RequestManager):
     def login(self) -> NoReturn:
         """
         Log in to PEPhub
-        :return: None
         """
         user_token = PEPHubAuth().login_to_pephub()
 
@@ -51,20 +49,17 @@ class PEPHubClient(RequestManager):
     def logout(self) -> NoReturn:
         """
         Log out from PEPhub
-        :return: NoReturn
         """
         FilesManager.delete_file_if_exists(self.PATH_TO_FILE_WITH_JWT)
 
     def pull(
         self,
         project_registry_path: str,
-        project_format: Optional[str] = "default",
         force: Optional[bool] = False
     ) -> None:
         """
-        Downl
+        Download project locally
         :param str project_registry_path: Project registry path in PEPhub (e.g. databio/base:default)
-        :param str project_format: project format to be saved. Options: [default, zip]
         :param bool force: if project exists, overwrite it.
         :return: None
         """
@@ -72,7 +67,6 @@ class PEPHubClient(RequestManager):
         project_dict = self._load_raw_pep(registry_path=project_registry_path, jwt_data=jwt_data)
 
         self._save_raw_pep(reg_path=project_registry_path, project_dict=project_dict, force=force)
-
 
     def load_project(
         self,
@@ -164,6 +158,7 @@ class PEPHubClient(RequestManager):
             MessageHandler.print_error("Unauthorized! Failure in uploading project.")
         else:
             MessageHandler.print_error("Unexpected Error.")
+        return None
 
     @staticmethod
     def _save_raw_pep(
@@ -228,11 +223,9 @@ class PEPHubClient(RequestManager):
     ) -> dict:
         """
         Request PEPhub and return the requested project as peppy.Project object.
-
         :param registry_path: Project namespace, eg. "geo/GSE124224:tag"
         :param query_param: Optional variables to be passed to PEPhub
         :param jwt_data: JWT token.
-
         :return: Raw project in dict.
         """
         if not query_param:
@@ -263,7 +256,6 @@ class PEPHubClient(RequestManager):
     def _set_registry_data(self, query_string: str) -> None:
         """
         Parse provided query string to extract project name, sample name, etc.
-
         :param query_string: Passed by user. Contain information needed to locate the project.
         :return: Parsed query string.
         """
@@ -274,12 +266,22 @@ class PEPHubClient(RequestManager):
 
     @staticmethod
     def _get_header(jwt_data: Optional[str] = None) -> dict:
+        """
+        Create Authorization header
+        :param jwt_data: jwt string
+        :return: Authorization dict
+        """
         if jwt_data:
             return {"Authorization": jwt_data}
         else:
             return {}
 
     def _build_pull_request_url(self, query_param: dict = None) -> str:
+        """
+        Build request for getting projects form pephub
+        :param query_param: dict of parameters used in query string
+        :return: url string
+        """
         if not query_param:
             query_param = {}
         query_param["tag"] = self.registry_path.tag
@@ -295,6 +297,11 @@ class PEPHubClient(RequestManager):
 
     @staticmethod
     def _build_push_request_url(namespace: str) -> str:
+        """
+        Build project uplaod request used in pephub
+        :param namespace: namespace where project will be uploaded
+        :return: url string
+        """
         return PEPHUB_PUSH_URL.format(namespace=namespace)
 
     @staticmethod
@@ -302,7 +309,7 @@ class PEPHubClient(RequestManager):
         """
         Grab all the variables passed by user (if any) and parse them to match the format specified
         by PEPhub API for query parameters.
-
+        :param pep_variables: dict of query parameters
         :return: PEPHubClient variables transformed into string in correct format.
         """
         parsed_variables = []
@@ -313,6 +320,9 @@ class PEPHubClient(RequestManager):
 
     @staticmethod
     def _handle_pephub_response(pephub_response: requests.Response):
+        """
+        Check pephub response
+        """
         decoded_response = PEPHubClient.decode_response(pephub_response)
 
         if pephub_response.status_code != ResponseStatusCodes.OK_200:

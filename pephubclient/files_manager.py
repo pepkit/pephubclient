@@ -1,7 +1,6 @@
 import pathlib
 from contextlib import suppress
 import os
-from typing import Optional
 import yaml
 import pandas
 
@@ -12,6 +11,9 @@ from pephubclient.exceptions import PEPExistsError
 class FilesManager:
     @staticmethod
     def save_jwt_data_to_file(path: str, jwt_data: str) -> None:
+        """
+        Save jwt to provided path
+        """
         pathlib.Path(os.path.dirname(path)).mkdir(parents=True, exist_ok=True)
         with open(path, "w") as f:
             f.write(jwt_data)
@@ -29,7 +31,7 @@ class FilesManager:
     def crete_registry_folder(registry_path: RegistryPath) -> str:
         """
         Create new project folder
-        :param name: folder name
+        :param registry_path: project registry path
         :return: folder_path
         """
         folder_name = FilesManager._create_filename_to_save_downloaded_project(registry_path)
@@ -63,12 +65,8 @@ class FilesManager:
     def _create_filename_to_save_downloaded_project(registry_path: RegistryPath) -> str:
         """
         Takes query string and creates output filename to save the project to.
-
-        Args:
-            query_string: Query string that was used to find the project.
-
-        Returns:
-            Filename uniquely identifying the project.
+        :param registry_path: Query string that was used to find the project.
+        :return: Filename uniquely identifying the project.
         """
         filename = []
 

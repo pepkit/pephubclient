@@ -2,14 +2,6 @@ from pydantic import BaseModel, Field, Extra
 from typing import Optional
 
 
-class JWTDataResponse(BaseModel):
-    jwt_token: str
-
-
-class ClientData(BaseModel):
-    client_id: str
-
-
 class ProjectDict(BaseModel):
     """
     Project dict (raw) model

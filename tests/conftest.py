@@ -1,5 +1,4 @@
 import pytest
-from pephubclient.models import ClientData
 import json
 
 
@@ -32,6 +31,3 @@ def test_jwt_response(test_jwt):
     return json.dumps({"jwt_token": test_jwt}).encode("utf-8")
 
 
-@pytest.fixture
-def test_client_data():
-    return ClientData(client_id="test_id")

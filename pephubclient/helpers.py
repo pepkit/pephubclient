@@ -29,7 +29,6 @@ class RequestManager:
     def decode_response(response: requests.Response) -> str:
         """
         Decode the response from GitHub and pack the returned data into appropriate model.
-
         :param response: Response from GitHub.
         :return: Response data as an instance of correct model.
         """
@@ -40,6 +39,9 @@ class RequestManager:
 
 
 class MessageHandler:
+    """
+    Class holding print function in different colors
+    """
     RED = 9
     YELLOW = 11
     GREEN = 40

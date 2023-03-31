@@ -19,10 +19,6 @@ class ResponseError(BasePephubclientException):
         super().__init__(self.message or self.default_message)
 
 
-class AuthorizationPendingError(BasePephubclientException):
-    ...
-
-
 class PEPExistsError(BasePephubclientException):
     default_message = "PEP already exists. Change location, delete previous PEP or set force argument " \
                       "to overwrite previous PEP"
