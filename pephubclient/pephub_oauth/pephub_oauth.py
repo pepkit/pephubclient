@@ -4,7 +4,7 @@ import requests
 import time
 from pydantic import BaseModel
 
-from pephubclient.helpers import RequestManager
+from pephubclient.helpers import RequestManager, MessageHandler
 from pephubclient.pephub_oauth.const import (
     PEPHUB_DEVICE_INIT_URI,
     PEPHUB_DEVICE_TOKEN_URI,
@@ -49,9 +49,9 @@ class PEPHubAuth(RequestManager):
                 pephub_response.device_code
             )
         except PEPHubTokenExchangeException:
-            print("You are not logged in")
+            MessageHandler.print_warning("You are not logged in")
         else:
-            print("Successfully logged in!")
+            MessageHandler.print_success("Successfully logged in!")
             return user_token
 
     def _request_pephub_for_device_code(self) -> InitializeDeviceCodeResponse:
@@ -65,7 +65,6 @@ class PEPHubAuth(RequestManager):
             headers=None,
         )
         return self._handle_pephub_response(response, InitializeDeviceCodeResponse)
-        # return "device code"
 
     def _exchange_device_code_on_token(self, device_code: str) -> str:
         """
@@ -89,13 +88,10 @@ class PEPHubAuth(RequestManager):
     ) -> Union[BaseModel, InitializeDeviceCodeResponse, PEPHubDeviceTokenResponse]:
         """
         Decode the response from GitHub and pack the returned data into appropriate model.
+        :param response: Response from pephub
+        :param model: Model that the data will be packed to.
 
-        Args:
-            response: Response from PEPhub
-            model: Model that the data will be packed to.
-
-        Returns:
-            Response data as an instance of correct model.
+        :return: Response data as an instance of correct model.
         """
         if response.status_code == 401:
             raise PEPHubTokenExchangeException
