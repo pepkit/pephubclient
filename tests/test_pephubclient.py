@@ -34,6 +34,7 @@ class TestSmoke:
         )
 
         pathlib_mock = mocker.patch("pathlib.Path.mkdir")
+        pathlib_mock1 = mocker.patch("os.open")
 
         PEPHubClient().login()
 
