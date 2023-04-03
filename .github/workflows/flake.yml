@@ -1,4 +1,4 @@
-name: Lint
+name: Flake
 
 on:
   pull_request:
@@ -7,7 +7,7 @@ on:
 
 jobs:
   lint:
-    name: Lint
+    name: flake
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -16,3 +16,4 @@ jobs:
         select: E3,E4,E5,E7,W6,F,B,G0
         maxlinelength: 120
         repotoken: ${{ secrets.GITHUB_TOKEN }}
+        exclude: .git,__pycache__,docs/source/conf.py,old,build,dist
