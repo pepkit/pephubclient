@@ -1,24 +1,66 @@
 # `PEPHubClient`
 
-`PEPHubClient` is a tool to provide Python and CLI interface for `pephub`.
-Authorization is based on `OAuth` with using GitHub.
+`PEPHubClient` is a tool to provide Python and CLI interface and Python API for [PEPhub](https://pephub.databio.org).
 
-The authorization process is slightly complex and needs more explanation.
-The explanation will be provided based on two commands:
+`pephubclient` features: 
+1) `push` (upload) projects)
+2) `pull` (download projects)
 
+Additionally, our client supports pephub authorization.
+The authorization process is based on pephub device authorization protocol.
+To upload projects or to download privet projects, user must be authorized through pephub.
 
-## 1. `pephubclient login`
-To authenticate itself user must execute `pephubclient login` command (1).
-Command triggers the process of authenticating with GitHub.
-`PEPHubClient` sends the request for user and device verification codes (2), and
-GitHub responds with the data (3). Next, if user is not logged in, GitHub
-asks for login (4), user logs in (5) and then GitHub asks to input 
-verification code (6) that is shown to user in the CLI. 
-After inputting the correct verification code (7), `PEPHubClient`
-sends the request to GitHub and asks about access token (8), which is then
-provided by GitHub based on data from authentication (9).
-![](static/pephubclient_login.png)
+To login and logout use `login` and `logout` arguments respectively.
 
+----
+`phc --help`
+```text
+╭─ Commands ───────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ login                 Login to PEPhub                                                                        │
+│ logout                Logout                                                                                 │
+│ pull                  Download and save project locally.                                                     │
+│ push                  Upload/update project in PEPhub                                                        │
+│ version               Version                                                                                │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+```
 
-## 2. `pephubclient pull project/name:tag`
-![](static/pephubclient_pull.png)
+`phc pull --help`
+```text
+ Usage: pephubclient pull [OPTIONS] PROJECT_REGISTRY_PATH                                                       
+                                                                                                                
+ Download and save project locally.                                                                             
+                                                                                                                
+╭─ Arguments ──────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ *    project_registry_path      TEXT  [default: None] [required]                                             │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────────────────╮                                        
+│                                         [default: default]                                                   │
+│ --force             --no-force          Last name of person to greet. [default: no-force]                    │
+│ --help                                  Show this message and exit.                                          │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+```
+
+`phc push --help`
+```text
+ Usage: pephubclient push [OPTIONS] CFG                                                                         
+                                                                                                                
+ Upload/update project in PEPhub                                                                                
+                                                                                                                
+╭─ Arguments ──────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ *    cfg      TEXT  Project config file (YAML) or sample table (CSV/TSV) with one row per sample to          │
+│                     constitute project                                                                       │
+│                     [default: None]                                                                          │
+│                     [required]                                                                               │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ *  --namespace                        TEXT  Project name [default: None] [required]                          │
+│ *  --name                             TEXT  Project name [default: None] [required]                          │
+│    --tag                              TEXT  Project tag [default: None]                                      │
+│    --force         --no-force               Force push to the database. Use it to update, or upload project. │
+│                                             [default: no-force]                                              │
+│    --is-private    --no-is-private          Upload project as private. [default: no-is-private]              │
+│    --help                                   Show this message and exit.                                      │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+```
