@@ -33,7 +33,9 @@ class TestSmoke:
             return_value=test_jwt,
         )
 
-        pathlib_mock = mocker.patch("pephubclient.files_manager.FilesManager.save_jwt_data_to_file")
+        pathlib_mock = mocker.patch(
+            "pephubclient.files_manager.FilesManager.save_jwt_data_to_file"
+        )
 
         PEPHubClient().login()
 
