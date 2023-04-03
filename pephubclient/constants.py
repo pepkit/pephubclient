@@ -15,7 +15,7 @@ class RegistryPath(BaseModel):
     subitem: Optional[str]
     tag: Optional[str] = "default"
 
-    @validator('tag')
+    @validator("tag")
     def tag_should_not_be_none(cls, v):
         if v:
             return v

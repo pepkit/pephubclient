@@ -52,11 +52,7 @@ class PEPHubClient(RequestManager):
         """
         FilesManager.delete_file_if_exists(self.PATH_TO_FILE_WITH_JWT)
 
-    def pull(
-        self,
-        project_registry_path: str,
-        force: Optional[bool] = False
-    ) -> None:
+    def pull(self, project_registry_path: str, force: Optional[bool] = False) -> None:
         """
         Download project locally
         :param str project_registry_path: Project registry path in PEPhub (e.g. databio/base:default)
@@ -64,9 +60,13 @@ class PEPHubClient(RequestManager):
         :return: None
         """
         jwt_data = FilesManager.load_jwt_data_from_file(self.PATH_TO_FILE_WITH_JWT)
-        project_dict = self._load_raw_pep(registry_path=project_registry_path, jwt_data=jwt_data)
+        project_dict = self._load_raw_pep(
+            registry_path=project_registry_path, jwt_data=jwt_data
+        )
 
-        self._save_raw_pep(reg_path=project_registry_path, project_dict=project_dict, force=force)
+        self._save_raw_pep(
+            reg_path=project_registry_path, project_dict=project_dict, force=force
+        )
 
     def load_project(
         self,
@@ -105,12 +105,14 @@ class PEPHubClient(RequestManager):
         :return: None
         """
         peppy_project = peppy.Project(cfg=cfg)
-        self.upload(project=peppy_project,
-                    namespace=namespace,
-                    name=name,
-                    tag=tag,
-                    is_private=is_private,
-                    force=force,)
+        self.upload(
+            project=peppy_project,
+            namespace=namespace,
+            name=name,
+            tag=tag,
+            is_private=is_private,
+            force=force,
+        )
 
     def upload(
         self,
@@ -141,7 +143,6 @@ class PEPHubClient(RequestManager):
             tag=tag,
             is_private=is_private,
             overwrite=force,
-
         )
         pephub_response = self.send_request(
             method="POST",
@@ -151,20 +152,24 @@ class PEPHubClient(RequestManager):
             cookies=None,
         )
         if pephub_response.status_code == 202:
-            MessageHandler.print_success(f"Project '{namespace}/{name}:{upload_data.tag}' was successfully uploaded")
+            MessageHandler.print_success(
+                f"Project '{namespace}/{name}:{upload_data.tag}' was successfully uploaded"
+            )
         elif pephub_response.status_code == 409:
-            MessageHandler.print_error("Project already exists. Set force to overwrite project.")
+            raise ResponseError(
+                "Project already exists. Set force to overwrite project."
+            )
         elif pephub_response.status_code == 401:
-            MessageHandler.print_error("Unauthorized! Failure in uploading project.")
+            raise ResponseError("Unauthorized! Failure in uploading project.")
         else:
-            MessageHandler.print_error("Unexpected Error.")
+            raise ResponseError("Unexpected Response Error.")
         return None
 
     @staticmethod
     def _save_raw_pep(
-            reg_path: str,
-            project_dict: dict,
-            force: bool = False,
+        reg_path: str,
+        project_dict: dict,
+        force: bool = False,
     ) -> None:
         """
         Save project locally.
@@ -177,42 +182,46 @@ class PEPHubClient(RequestManager):
         config_dict = project_dict.get("_config")
         config_dict["name"] = project_name
         config_dict["description"] = project_dict["description"]
-        config_dict['sample_table'] = "sample_table.csv"
+        config_dict["sample_table"] = "sample_table.csv"
 
         sample_dict = project_dict.get("_sample_dict")
         sample_pandas = pd.DataFrame(sample_dict)
 
         if project_dict.get("_subsample_dict"):
             subsample_list = [
-                pd.DataFrame(sub_a)
-                for sub_a in project_dict["_subsample_dict"]
+                pd.DataFrame(sub_a) for sub_a in project_dict["_subsample_dict"]
             ]
-            config_dict['subsample_table'] = []
+            config_dict["subsample_table"] = []
             for number, value in enumerate(subsample_list, start=1):
-                config_dict['subsample_table'].append(f"subsample_table{number}.csv")
+                config_dict["subsample_table"].append(f"subsample_table{number}.csv")
         else:
             subsample_list = None
         reg_path_model = RegistryPath(**parse_registry_path(reg_path))
-        folder_path = FilesManager.crete_registry_folder(registry_path=reg_path_model)
+        folder_path = FilesManager.crete_project_folder(registry_path=reg_path_model)
 
         yaml_full_path = os.path.join(folder_path, f"{project_name}_config.yaml")
-        sample_full_path = os.path.join(folder_path, config_dict['sample_table'])
+        sample_full_path = os.path.join(folder_path, config_dict["sample_table"])
 
-        if FilesManager.file_exists(yaml_full_path) or FilesManager.file_exists(sample_full_path):
+        if FilesManager.file_exists(yaml_full_path) or FilesManager.file_exists(
+            sample_full_path
+        ):
             if not force:
                 raise PEPExistsError
 
         FilesManager.save_yaml(config_dict, yaml_full_path, force=True)
         FilesManager.save_pandas(sample_pandas, sample_full_path, force=True)
 
-        if config_dict.get('subsample_table'):
-
+        if config_dict.get("subsample_table"):
             for number, subsample in enumerate(subsample_list):
-                FilesManager.save_pandas(subsample,
-                                         os.path.join(folder_path, config_dict['subsample_table'][number]),
-                                         force=True)
+                FilesManager.save_pandas(
+                    subsample,
+                    os.path.join(folder_path, config_dict["subsample_table"][number]),
+                    force=True,
+                )
 
-        MessageHandler.print_success(f"Project was downloaded successfully -> {folder_path}")
+        MessageHandler.print_success(
+            f"Project was downloaded successfully -> {folder_path}"
+        )
         return None
 
     def _load_raw_pep(
@@ -221,7 +230,7 @@ class PEPHubClient(RequestManager):
         jwt_data: Optional[str] = None,
         query_param: Optional[dict] = None,
     ) -> dict:
-        """ project_name
+        """project_name
         Request PEPhub and return the requested project as peppy.Project object.
         :param registry_path: Project namespace, eg. "geo/GSE124224:tag"
         :param query_param: Optional variables to be passed to PEPhub
@@ -247,11 +256,13 @@ class PEPHubClient(RequestManager):
             return correct_proj_dict.dict(by_alias=True)
 
         elif pephub_response.status_code == 404:
-            MessageHandler.print_error("File does not exist, or you are unauthorized.")
+            raise ResponseError("File does not exist, or you are unauthorized.")
         elif pephub_response.status_code == 500:
-            MessageHandler.print_error("Internal server error.")
+            raise ResponseError("Internal server error.")
         else:
-            MessageHandler.print_error(f"Unknown error occurred. Status: {pephub_response.status_code}")
+            raise ResponseError(
+                f"Unknown error occurred. Status: {pephub_response.status_code}"
+            )
 
     def _set_registry_data(self, query_string: str) -> None:
         """
@@ -286,11 +297,7 @@ class PEPHubClient(RequestManager):
             query_param = {}
         query_param["tag"] = self.registry_path.tag
 
-        endpoint = (
-                self.registry_path.namespace
-                + "/"
-                + self.registry_path.item
-        )
+        endpoint = self.registry_path.namespace + "/" + self.registry_path.item
         if query_param:
             variables_string = PEPHubClient._parse_query_param(query_param)
             endpoint += variables_string

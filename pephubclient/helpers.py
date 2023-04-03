@@ -42,6 +42,7 @@ class MessageHandler:
     """
     Class holding print function in different colors
     """
+
     RED = 9
     YELLOW = 11
     GREEN = 40

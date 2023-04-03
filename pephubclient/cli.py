@@ -4,7 +4,7 @@ from requests.exceptions import ConnectionError
 from pephubclient import __app_name__, __version__
 from pephubclient.pephubclient import PEPHubClient
 from pephubclient.helpers import MessageHandler
-from pephubclient.exceptions import PEPExistsError
+from pephubclient.exceptions import PEPExistsError, ResponseError
 
 
 pep_hub_client = PEPHubClient()
@@ -45,10 +45,15 @@ def pull(
         pep_hub_client.pull(project_registry_path, force)
 
     except ConnectionError:
-        MessageHandler.print_error("Failed to download project. Connection Error. Try later.")
-
+        MessageHandler.print_error(
+            "Failed to download project. Connection Error. Try later."
+        )
     except PEPExistsError as err:
-        MessageHandler.print_warning(f"PEP '{project_registry_path}' already exists. {err}")
+        MessageHandler.print_warning(
+            f"PEP '{project_registry_path}' already exists. {err}"
+        )
+    except ResponseError as err:
+        MessageHandler.print_error(f"{err}")
 
 
 @app.command()
@@ -64,9 +69,7 @@ def push(
     force: bool = typer.Option(
         False, help="Force push to the database. Use it to update, or upload project."
     ),
-    is_private: bool = typer.Option(
-        False, help="Upload project as private."
-    ),
+    is_private: bool = typer.Option(False, help="Upload project as private."),
 ):
     """
     Upload/update project in PEPhub
@@ -78,10 +81,14 @@ def push(
             name=name,
             tag=tag,
             is_private=is_private,
-            force=force
+            force=force,
         )
     except ConnectionError:
-        MessageHandler.print_error("Failed to upload project. Connection Error. Try later.")
+        MessageHandler.print_error(
+            "Failed to upload project. Connection Error. Try later."
+        )
+    except ResponseError as err:
+        MessageHandler.print_error(f"{err}")
 
 
 @app.command()
