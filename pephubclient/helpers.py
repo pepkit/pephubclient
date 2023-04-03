@@ -1,5 +1,6 @@
 import json
-from typing import Optional, NoReturn
+from typing import NoReturn, Optional
+
 import requests
 
 from pephubclient.exceptions import ResponseError

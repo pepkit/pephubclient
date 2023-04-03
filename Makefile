@@ -1,5 +1,5 @@
 lint:
-	black . && isort . && flake8
+	flake8 && isort . && black .
 
 run-coverage:
 	coverage run -m pytest

@@ -1,5 +1,6 @@
-from pydantic import BaseModel, Field, Extra, validator
 from typing import Optional
+
+from pydantic import BaseModel, Extra, Field, validator
 
 
 class ProjectDict(BaseModel):

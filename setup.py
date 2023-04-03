@@ -1,7 +1,9 @@
-import sys
 import os
-from setuptools import find_packages, setup
-from pephubclient import __app_name__, __version__, __author__
+import sys
+
+from setuptools import setup
+
+from pephubclient import __app_name__, __author__, __version__
 
 PACKAGE = __app_name__
 REQDIR = "requirements"
@@ -14,10 +16,10 @@ extra = {}
 def read_reqs(reqs_name):
     deps = []
     with open(os.path.join(REQDIR, f"requirements-{reqs_name}.txt"), "r") as f:
-        for l in f:
-            if not l.strip():
+        for line in f:
+            if not line.strip():
                 continue
-            deps.append(l)
+            deps.append(line)
     return deps
 
 

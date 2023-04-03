@@ -1,9 +1,10 @@
-import pytest
 import os
-from unittest.mock import Mock, patch, mock_open
-from pephubclient.pephubclient import PEPHubClient
-from pephubclient.exceptions import ResponseError
+from unittest.mock import Mock
 
+import pytest
+
+from pephubclient.exceptions import ResponseError
+from pephubclient.pephubclient import PEPHubClient
 
 SAMPLE_PEP = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
@@ -86,7 +87,7 @@ class TestSmoke:
                 500,
                 "Internal server error.",
             ),
-            (501, f"Unknown error occurred. Status: 501"),
+            (501, "Unknown error occurred. Status: 501"),
         ],
     )
     def test_pull_with_pephub_error_response(

@@ -1,5 +1,10 @@
 # `PEPHubClient`
 
+[![PEP compatible](https://pepkit.github.io/img/PEP-compatible-green.svg)](https://pepkit.github.io)
+![Run pytests](https://github.com/pepkit/geofetch/workflows/Run%20pytests/badge.svg)
+[![pypi-badge](https://img.shields.io/pypi/v/pephubclient)](https://pypi.org/project/pephubclient)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
 `PEPHubClient` is a tool to provide Python and CLI interface and Python API for [PEPhub](https://pephub.databio.org).
 
 `pephubclient` features: 

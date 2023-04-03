@@ -2,10 +2,9 @@ import typer
 from requests.exceptions import ConnectionError
 
 from pephubclient import __app_name__, __version__
-from pephubclient.pephubclient import PEPHubClient
-from pephubclient.helpers import MessageHandler
 from pephubclient.exceptions import PEPExistsError, ResponseError
-
+from pephubclient.helpers import MessageHandler
+from pephubclient.pephubclient import PEPHubClient
 
 pep_hub_client = PEPHubClient()
 

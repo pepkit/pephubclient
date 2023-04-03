@@ -1,10 +1,8 @@
-import pytest
 import json
-from pephubclient.pephub_oauth.models import (
-    InitializeDeviceCodeResponse,
-    PEPHubDeviceTokenResponse,
-)
-from pephubclient.models import ProjectDict
+
+import pytest
+
+from pephubclient.pephub_oauth.models import InitializeDeviceCodeResponse
 
 
 @pytest.fixture()

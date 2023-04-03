@@ -1,21 +1,22 @@
 import json
-from typing import Type, Union
-import requests
 import time
+from typing import Type, Union
+
+import requests
 from pydantic import BaseModel
 
-from pephubclient.helpers import RequestManager, MessageHandler
+from pephubclient.helpers import MessageHandler, RequestManager
 from pephubclient.pephub_oauth.const import (
     PEPHUB_DEVICE_INIT_URI,
     PEPHUB_DEVICE_TOKEN_URI,
 )
-from pephubclient.pephub_oauth.models import (
-    InitializeDeviceCodeResponse,
-    PEPHubDeviceTokenResponse,
-)
 from pephubclient.pephub_oauth.exceptions import (
     PEPHubResponseException,
     PEPHubTokenExchangeException,
+)
+from pephubclient.pephub_oauth.models import (
+    InitializeDeviceCodeResponse,
+    PEPHubDeviceTokenResponse,
 )
 
 

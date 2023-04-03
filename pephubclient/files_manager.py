@@ -1,8 +1,9 @@
+import os
 import pathlib
 from contextlib import suppress
-import os
-import yaml
+
 import pandas
+import yaml
 
 from pephubclient.constants import RegistryPath
 from pephubclient.exceptions import PEPExistsError
