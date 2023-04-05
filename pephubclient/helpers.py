@@ -1,9 +1,9 @@
 import json
-from typing import NoReturn, Optional
-
+from typing import NoReturn, Optional, Any, Callable
 import requests
 
-from pephubclient.exceptions import ResponseError
+from requests.exceptions import ConnectionError
+from pephubclient.exceptions import ResponseError, PEPExistsError
 
 
 class RequestManager:
@@ -59,3 +59,27 @@ class MessageHandler:
     @staticmethod
     def print_warning(text: str) -> NoReturn:
         print(f"\033[38;5;11m{text}\033[0m")
+
+
+def call_client_func(func: Callable[..., Any], **kwargs) -> Any:
+    """
+    Catch exceptions in functions called through cli.
+
+    :param func: The function to call.
+    :param kwargs: The keyword arguments to pass to the function.
+    :return: The result of the function call.
+    """
+
+    try:
+        func(**kwargs)
+    except ConnectionError as err:
+        MessageHandler.print_error(
+            f"Failed to upload project. Connection Error. Try later. {err}"
+        )
+    except ResponseError as err:
+        MessageHandler.print_error(f"{err}")
+
+    except PEPExistsError as err:
+        MessageHandler.print_warning(
+            f"PEP already exists. {err}"
+        )

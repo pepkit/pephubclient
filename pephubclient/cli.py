@@ -1,12 +1,12 @@
 import typer
-from requests.exceptions import ConnectionError
 
 from pephubclient import __app_name__, __version__
-from pephubclient.exceptions import PEPExistsError, ResponseError
+
 from pephubclient.helpers import MessageHandler
 from pephubclient.pephubclient import PEPHubClient
+from pephubclient.helpers import call_client_func
 
-pep_hub_client = PEPHubClient()
+_client = PEPHubClient()
 
 app = typer.Typer()
 
@@ -16,10 +16,9 @@ def login():
     """
     Login to PEPhub
     """
-    try:
-        pep_hub_client.login()
-    except ConnectionError:
-        MessageHandler.print_error("Failed to log in. Connection Error. Try later.")
+    call_client_func(
+        _client.login
+    )
 
 
 @app.command()
@@ -27,32 +26,22 @@ def logout():
     """
     Logout
     """
-    pep_hub_client.logout()
+    _client.logout()
 
 
 @app.command()
 def pull(
     project_registry_path: str,
-    # project_format: str = typer.Option("default", help="Project format in which project should be saved"
-    #                                                    "Options: [default, basic, csv, yaml, zip]."),
-    force: bool = typer.Option(False, help="Last name of person to greet."),
+    force: bool = typer.Option(False, help="Overwrite project if it exists."),
 ):
     """
     Download and save project locally.
     """
-    try:
-        pep_hub_client.pull(project_registry_path, force)
-
-    except ConnectionError:
-        MessageHandler.print_error(
-            "Failed to download project. Connection Error. Try later."
-        )
-    except PEPExistsError as err:
-        MessageHandler.print_warning(
-            f"PEP '{project_registry_path}' already exists. {err}"
-        )
-    except ResponseError as err:
-        MessageHandler.print_error(f"{err}")
+    call_client_func(
+        _client.pull,
+        project_registry_path = project_registry_path,
+        force = force,
+    )
 
 
 @app.command()
@@ -62,7 +51,7 @@ def push(
         help="Project config file (YAML) or sample table (CSV/TSV)"
         "with one row per sample to constitute project",
     ),
-    namespace: str = typer.Option(..., help="Project name"),
+    namespace: str = typer.Option(..., help="Project namespace"),
     name: str = typer.Option(..., help="Project name"),
     tag: str = typer.Option(None, help="Project tag"),
     force: bool = typer.Option(
@@ -73,21 +62,17 @@ def push(
     """
     Upload/update project in PEPhub
     """
-    try:
-        pep_hub_client.push(
-            cfg=cfg,
-            namespace=namespace,
-            name=name,
-            tag=tag,
-            is_private=is_private,
-            force=force,
-        )
-    except ConnectionError:
-        MessageHandler.print_error(
-            "Failed to upload project. Connection Error. Try later."
-        )
-    except ResponseError as err:
-        MessageHandler.print_error(f"{err}")
+
+    call_client_func(
+        _client.push,
+        cfg=cfg,
+        namespace=namespace,
+        name=name,
+        tag=tag,
+        is_private=is_private,
+        force=force,
+    )
+
 
 
 @app.command()
