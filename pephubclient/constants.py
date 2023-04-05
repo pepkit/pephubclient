@@ -28,6 +28,6 @@ class ResponseStatusCodes(int, Enum):
     ACCEPTED = 202
     UNAUTHORIZED = 401
     FORBIDDEN = 403
-    NOT_EXIST= 404
+    NOT_EXIST = 404
     CONFLICT = 409
     INTERNAL_ERROR = 500
