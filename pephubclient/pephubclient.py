@@ -150,15 +150,15 @@ class PEPHubClient(RequestManager):
             json=upload_data.dict(),
             cookies=None,
         )
-        if pephub_response.status_code == 202:
+        if pephub_response.status_code == ResponseStatusCodes.ACCEPTED:
             MessageHandler.print_success(
                 f"Project '{namespace}/{name}:{upload_data.tag}' was successfully uploaded"
             )
-        elif pephub_response.status_code == 409:
+        elif pephub_response.status_code == ResponseStatusCodes.CONFLICT:
             raise ResponseError(
                 "Project already exists. Set force to overwrite project."
             )
-        elif pephub_response.status_code == 401:
+        elif pephub_response.status_code == ResponseStatusCodes.UNAUTHORIZED:
             raise ResponseError("Unauthorized! Failure in uploading project.")
         else:
             raise ResponseError("Unexpected Response Error.")
@@ -247,16 +247,16 @@ class PEPHubClient(RequestManager):
             headers=self._get_header(jwt_data),
             cookies=None,
         )
-        if pephub_response.status_code == 200:
+        if pephub_response.status_code == ResponseStatusCodes.OK:
             decoded_response = self._handle_pephub_response(pephub_response)
             correct_proj_dict = ProjectDict(**json.loads(decoded_response))
 
             # This step is necessary because of this issue: https://github.com/pepkit/pephub/issues/124
             return correct_proj_dict.dict(by_alias=True)
 
-        elif pephub_response.status_code == 404:
+        elif pephub_response.status_code == ResponseStatusCodes.NOT_EXIST:
             raise ResponseError("File does not exist, or you are unauthorized.")
-        elif pephub_response.status_code == 500:
+        elif pephub_response.status_code == ResponseStatusCodes.INTERNAL_ERROR:
             raise ResponseError("Internal server error.")
         else:
             raise ResponseError(
@@ -332,7 +332,7 @@ class PEPHubClient(RequestManager):
         """
         decoded_response = PEPHubClient.decode_response(pephub_response)
 
-        if pephub_response.status_code != ResponseStatusCodes.OK_200:
+        if pephub_response.status_code != ResponseStatusCodes.OK:
             raise ResponseError(message=json.loads(decoded_response).get("detail"))
         else:
             return decoded_response

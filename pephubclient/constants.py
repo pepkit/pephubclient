@@ -24,6 +24,10 @@ class RegistryPath(BaseModel):
 
 
 class ResponseStatusCodes(int, Enum):
-    FORBIDDEN_403 = 403
-    NOT_EXIST_404 = 404
-    OK_200 = 200
+    OK = 200
+    ACCEPTED = 202
+    UNAUTHORIZED = 401
+    FORBIDDEN = 403
+    NOT_EXIST= 404
+    CONFLICT = 409
+    INTERNAL_ERROR = 500

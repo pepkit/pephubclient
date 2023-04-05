@@ -14,19 +14,11 @@ extra = {}
 
 # Ordinary dependencies
 def read_reqs(reqs_name):
-    deps = []
     with open(os.path.join(REQDIR, f"requirements-{reqs_name}.txt"), "r") as f:
-        for line in f:
-            if not line.strip():
-                continue
-            deps.append(line)
-    return deps
+        return [line.strip() for line in f if line.strip()]
 
 
-DEPENDENCIES = read_reqs("all")
-extra["install_requires"] = DEPENDENCIES
-
-scripts = None
+extra["install_requires"] = read_reqs("all")
 
 with open("README.md") as f:
     long_description = f.read()
@@ -39,12 +31,13 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     classifiers=[
-        "Development Status :: 1 - Planing",
+        "Development Status :: 3 - Alpha",
         "License :: OSI Approved :: BSD License",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
-        "Topic :: Scientific/Engineering :: Bio-Informatics",
+        "Programming Language :: Python :: 3.11",
+        "Topic :: Scientific/Engineering :: Bioinformatics",
     ],
     keywords="project, bioinformatics, metadata",
     url=f"https://github.com/databio/{PACKAGE}/",
@@ -56,7 +49,7 @@ setup(
         ],
     },
     package_data={PACKAGE: ["templates/*"]},
-    scripts=scripts,
+    scripts=None,
     include_package_data=True,
     test_suite="tests",
     tests_require=read_reqs("dev"),
