@@ -15,7 +15,7 @@ Additionally, our client supports pephub authorization.
 The authorization process is based on pephub device authorization protocol.
 To upload projects or to download privet projects, user must be authorized through pephub.
 
-To login and logout use `login` and `logout` arguments respectively.
+To login, use the `login` argument; to logout, use `logout`.
 
 ----
 `phc --help`
