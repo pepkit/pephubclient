@@ -5,7 +5,7 @@
 [![pypi-badge](https://img.shields.io/pypi/v/pephubclient)](https://pypi.org/project/pephubclient)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-`PEPHubClient` is a tool to provide Python and CLI interface and Python API for [PEPhub](https://pephub.databio.org).
+`PEPHubClient` is a tool to provide Python API and CLI for [PEPhub](https://pephub.databio.org).
 
 `pephubclient` features: 
 1) `push` (upload) projects)
