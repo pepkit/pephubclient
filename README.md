@@ -13,7 +13,7 @@
 
 Additionally, our client supports pephub authorization.
 The authorization process is based on pephub device authorization protocol.
-To upload projects or to download privet projects, user must be authorized through pephub.
+To upload projects or to download private projects, user must be authorized through pephub.
 
 To login, use the `login` argument; to logout, use `logout`.
 
