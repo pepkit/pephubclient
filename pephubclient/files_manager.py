@@ -1,5 +1,5 @@
 import os
-import pathlib
+from pathlib import Path
 from contextlib import suppress
 
 import pandas
@@ -10,12 +10,13 @@ from pephubclient.exceptions import PEPExistsError
 
 
 class FilesManager:
+
     @staticmethod
     def save_jwt_data_to_file(path: str, jwt_data: str) -> None:
         """
         Save jwt to provided path
         """
-        pathlib.Path(os.path.dirname(path)).mkdir(parents=True, exist_ok=True)
+        Path(os.path.dirname(path)).mkdir(parents=True, exist_ok=True)
         with open(path, "w") as f:
             f.write(jwt_data)
 
@@ -38,21 +39,19 @@ class FilesManager:
         folder_name = FilesManager._create_filename_to_save_downloaded_project(
             registry_path
         )
-        folder_path = os.path.join(os.path.join(os.getcwd(), folder_name))
-        pathlib.Path(folder_path).mkdir(parents=True, exist_ok=True)
+        folder_path = os.path.join(os.getcwd(), folder_name)
+        Path(folder_path).mkdir(parents=True, exist_ok=True)
         return folder_path
 
     @staticmethod
-    def save_yaml(config: dict, full_path: str, force: bool = True):
-        if FilesManager.file_exists(full_path) and not force:
-            raise PEPExistsError("Yaml file already exists. File won't be updated")
+    def save_yaml(config: dict, full_path: str, not_force: bool = False):
+        FilesManager.check_writable(path=full_path, force=not not_force)
         with open(full_path, "w") as outfile:
             yaml.dump(config, outfile, default_flow_style=False)
 
     @staticmethod
-    def save_pandas(df: pandas.DataFrame, full_path: str, force: bool = True):
-        if FilesManager.file_exists(full_path) and not force:
-            raise PEPExistsError("Csv file already exists. File won't be updated")
+    def save_pandas(df: pandas.DataFrame, full_path: str, not_force: bool = False):
+        FilesManager.check_writable(path=full_path, force=not not_force)
         df.to_csv(full_path, index=False)
 
     @staticmethod
@@ -71,16 +70,12 @@ class FilesManager:
         :param registry_path: Query string that was used to find the project.
         :return: Filename uniquely identifying the project.
         """
-        filename = []
-
-        if registry_path.namespace:
-            filename.append(registry_path.namespace)
-        if registry_path.item:
-            filename.append(registry_path.item)
-
-        filename = "_".join(filename)
-
+        filename = "_".join(filter(bool, [registry_path.namespace, registry_path.item]))
         if registry_path.tag:
-            filename = filename + ":" + registry_path.tag
-
+            filename += f":{registry_path.tag}"
         return filename
+
+    @staticmethod
+    def check_writable(path: str, force: bool = True):
+        if not force and os.path.isfile(path):
+            raise PEPExistsError(f"File already exists and won't be updated: {path}")

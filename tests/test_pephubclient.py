@@ -69,7 +69,7 @@ class TestSmoke:
         save_sample_mock = mocker.patch(
             "pephubclient.files_manager.FilesManager.save_pandas"
         )
-        mocker.patch("pephubclient.files_manager.FilesManager.crete_project_folder")
+        mocker.patch("pephubclient.files_manager.FilesManager.create_project_folder")
 
         PEPHubClient().pull("some/project")
 

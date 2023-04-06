@@ -32,9 +32,11 @@ class PEPHubAuth(RequestManager):
             f"{pephub_response.auth_url} to authenticate."
         )
 
+        # Sleep 2 minutes and then try 3 times exchange device code on token
         time.sleep(2)
 
-        for i in range(3):
+        number_of_token_exchange_attempts = 3
+        for i in range(number_of_token_exchange_attempts):
             try:
                 user_token = self._exchange_device_code_on_token(
                     pephub_response.device_code
@@ -44,6 +46,8 @@ class PEPHubAuth(RequestManager):
             else:
                 print("Successfully logged in!")
                 return user_token
+
+        # If you didn't log in press enter to try again.
         input("If you logged in, press enter to continue...")
         try:
             user_token = self._exchange_device_code_on_token(
@@ -95,9 +99,9 @@ class PEPHubAuth(RequestManager):
         :return: Response data as an instance of correct model.
         """
         if response.status_code == 401:
-            raise PEPHubTokenExchangeException
+            raise PEPHubTokenExchangeException()
         if response.status_code != 200:
-            raise PEPHubResponseException
+            raise PEPHubResponseException()
         try:
             content = json.loads(PEPHubAuth.decode_response(response))
         except json.JSONDecodeError:

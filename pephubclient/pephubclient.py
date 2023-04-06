@@ -205,17 +205,17 @@ class PEPHubClient(RequestManager):
             sample_full_path
         ):
             if not force:
-                raise PEPExistsError
+                raise PEPExistsError(f"PEP already exists locally: '{folder_path}'")
 
-        FilesManager.save_yaml(config_dict, yaml_full_path, force=True)
-        FilesManager.save_pandas(sample_pandas, sample_full_path, force=True)
+        FilesManager.save_yaml(config_dict, yaml_full_path, not_force=False)
+        FilesManager.save_pandas(sample_pandas, sample_full_path, not_force=False)
 
         if config_dict.get("subsample_table"):
             for number, subsample in enumerate(subsample_list):
                 FilesManager.save_pandas(
                     subsample,
                     os.path.join(folder_path, config_dict["subsample_table"][number]),
-                    force=True,
+                    not_force=False,
                 )
 
         MessageHandler.print_success(
