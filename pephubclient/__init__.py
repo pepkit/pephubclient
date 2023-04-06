@@ -5,4 +5,4 @@ __version__ = "0.1.0"
 __author__ = "Oleksandr Khoroshevskyi, Rafal Stepien"
 
 
-__all__ = ["PEPHubClient"]
+__all__ = ["PEPHubClient", __app_name__, __author__, __version__]

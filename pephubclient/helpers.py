@@ -1,9 +1,10 @@
 import json
-from typing import NoReturn, Optional, Any, Callable
-import requests
+from typing import Any, Callable, NoReturn, Optional
 
+import requests
 from requests.exceptions import ConnectionError
-from pephubclient.exceptions import ResponseError, PEPExistsError
+
+from pephubclient.exceptions import PEPExistsError, ResponseError
 
 
 class RequestManager:

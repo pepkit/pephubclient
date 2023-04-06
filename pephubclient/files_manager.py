@@ -1,6 +1,6 @@
 import os
-from pathlib import Path
 from contextlib import suppress
+from pathlib import Path
 
 import pandas
 import yaml
