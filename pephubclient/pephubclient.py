@@ -200,14 +200,15 @@ class PEPHubClient(RequestManager):
                     f"{len(extant)} file(s) exist(s): {', '.join(extant)}"
                 )
 
-        config_dict = project_dict.get("_config", {})
+        config_dict = project_dict.get("_config")
         config_dict["name"] = project_name
         config_dict["description"] = project_dict["description"]
         config_dict["sample_table"] = sample_table_filename
 
         sample_pandas = pd.DataFrame(project_dict.get("_sample_dict", {}))
+
         subsample_list = [
-            pd.DataFrame(sub_a) for sub_a in project_dict.get("_subsample_dict", [])
+            pd.DataFrame(sub_a) for sub_a in project_dict.get("_subsample_dict") or []
         ]
 
         filenames = []

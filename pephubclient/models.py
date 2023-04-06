@@ -9,7 +9,7 @@ class ProjectDict(BaseModel):
     Project dict (raw) model
     """
 
-    description: str = ""
+    description: Optional[str] = ""
     config: dict = Field(alias="_config")
     subsample_dict: Optional[list] = Field(alias="_subsample_dict")
     name: str
