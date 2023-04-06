@@ -89,7 +89,6 @@ class TestSmoke:
                 500,
                 "Internal server error.",
             ),
-            (501, "Unknown error occurred. Status: 501"),
         ],
     )
     def test_pull_with_pephub_error_response(

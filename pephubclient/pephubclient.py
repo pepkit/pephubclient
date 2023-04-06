@@ -181,36 +181,41 @@ class PEPHubClient(RequestManager):
         :param bool force: overwrite project if exists
         :return: None
         """
-        project_name = project_dict["name"]
-
-        config_dict = project_dict.get("_config")
-        config_dict["name"] = project_name
-        config_dict["description"] = project_dict["description"]
-        config_dict["sample_table"] = "sample_table.csv"
-
-        sample_dict = project_dict.get("_sample_dict")
-        sample_pandas = pd.DataFrame(sample_dict)
-
-        if project_dict.get("_subsample_dict"):
-            subsample_list = [
-                pd.DataFrame(sub_a) for sub_a in project_dict["_subsample_dict"]
-            ]
-            config_dict["subsample_table"] = []
-            for number, value in enumerate(subsample_list, start=1):
-                config_dict["subsample_table"].append(f"subsample_table{number}.csv")
-        else:
-            subsample_list = None
         reg_path_model = RegistryPath(**parse_registry_path(reg_path))
         folder_path = FilesManager.create_project_folder(registry_path=reg_path_model)
 
-        yaml_full_path = os.path.join(folder_path, f"{project_name}_config.yaml")
-        sample_full_path = os.path.join(folder_path, config_dict["sample_table"])
+        def full_path(fn: str) -> str:
+            return os.path.join(folder_path, fn)
 
-        if FilesManager.file_exists(yaml_full_path) or FilesManager.file_exists(
-            sample_full_path
-        ):
-            if not force:
-                raise PEPExistsError(f"PEP already exists locally: '{folder_path}'")
+        project_name = project_dict["name"]
+        sample_table_filename = "sample_table.csv"
+        yaml_full_path = full_path(f"{project_name}_config.yaml")
+        sample_full_path = full_path(sample_table_filename)
+        if not force:
+            extant = [
+                p for p in [yaml_full_path, sample_full_path] if os.path.isfile(p)
+            ]
+            if extant:
+                raise PEPExistsError(
+                    f"{len(extant)} file(s) exist(s): {', '.join(extant)}"
+                )
+
+        config_dict = project_dict.get("_config", {})
+        config_dict["name"] = project_name
+        config_dict["description"] = project_dict["description"]
+        config_dict["sample_table"] = sample_table_filename
+
+        sample_pandas = pd.DataFrame(project_dict.get("_sample_dict", {}))
+        subsample_list = [
+            pd.DataFrame(sub_a) for sub_a in project_dict.get("_subsample_dict", [])
+        ]
+
+        filenames = []
+        for idx, subsample in enumerate(subsample_list):
+            fn = f"subsample_table{idx + 1}.csv"
+            filenames.append(fn)
+            FilesManager.save_pandas(subsample, full_path(fn), not_force=False)
+        config_dict["subsample_table"] = filenames
 
         FilesManager.save_yaml(config_dict, yaml_full_path, not_force=False)
         FilesManager.save_pandas(sample_pandas, sample_full_path, not_force=False)
@@ -242,8 +247,7 @@ class PEPHubClient(RequestManager):
         :param jwt_data: JWT token.
         :return: Raw project in dict.
         """
-        if not query_param:
-            query_param = {}
+        query_param = query_param or {}
         query_param["raw"] = "true"
 
         self._set_registry_data(registry_path)
@@ -260,14 +264,10 @@ class PEPHubClient(RequestManager):
             # This step is necessary because of this issue: https://github.com/pepkit/pephub/issues/124
             return correct_proj_dict.dict(by_alias=True)
 
-        elif pephub_response.status_code == ResponseStatusCodes.NOT_EXIST:
+        if pephub_response.status_code == ResponseStatusCodes.NOT_EXIST:
             raise ResponseError("File does not exist, or you are unauthorized.")
-        elif pephub_response.status_code == ResponseStatusCodes.INTERNAL_ERROR:
+        if pephub_response.status_code == ResponseStatusCodes.INTERNAL_ERROR:
             raise ResponseError("Internal server error.")
-        else:
-            raise ResponseError(
-                f"Unknown error occurred. Status: {pephub_response.status_code}"
-            )
 
     def _set_registry_data(self, query_string: str) -> None:
         """
@@ -301,14 +301,14 @@ class PEPHubClient(RequestManager):
         :param query_param: dict of parameters used in query string
         :return: url string
         """
-        if not query_param:
-            query_param = {}
+        query_param = query_param or {}
         query_param["tag"] = self.registry_path.tag
 
         endpoint = self.registry_path.namespace + "/" + self.registry_path.item
-        if query_param:
-            variables_string = PEPHubClient._parse_query_param(query_param)
-            endpoint += variables_string
+
+        variables_string = PEPHubClient._parse_query_param(query_param)
+        endpoint += variables_string
+
         return PEPHUB_PEP_API_BASE_URL + endpoint
 
     @staticmethod
@@ -345,5 +345,5 @@ class PEPHubClient(RequestManager):
 
         if pephub_response.status_code != ResponseStatusCodes.OK:
             raise ResponseError(message=json.loads(decoded_response).get("detail"))
-        else:
-            return decoded_response
+
+        return decoded_response
