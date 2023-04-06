@@ -54,6 +54,7 @@ class PEPHubClient(RequestManager):
     def pull(self, project_registry_path: str, force: Optional[bool] = False) -> None:
         """
         Download project locally
+
         :param str project_registry_path: Project registry path in PEPhub (e.g. databio/base:default)
         :param bool force: if project exists, overwrite it.
         :return: None
@@ -74,6 +75,7 @@ class PEPHubClient(RequestManager):
     ) -> peppy.Project:
         """
         Load peppy project from PEPhub in peppy.Project object
+
         :param project_registry_path: registry path of the project
         :param query_param: query parameters used in get request
         :return Project: peppy project.
@@ -94,6 +96,7 @@ class PEPHubClient(RequestManager):
     ) -> None:
         """
         Push (upload/update) project to Pephub using config/csv path
+
         :param str cfg: Project config file (YAML) or sample table (CSV/TSV)
             with one row per sample to constitute project
         :param str namespace: namespace
@@ -124,6 +127,7 @@ class PEPHubClient(RequestManager):
     ) -> None:
         """
         Upload peppy project to the PEPhub.
+
         :param peppy.Project project: Project object that has to be uploaded to the DB
         :param namespace: namespace
         :param name: project name
@@ -172,6 +176,7 @@ class PEPHubClient(RequestManager):
     ) -> None:
         """
         Save project locally.
+
         :param dict project_dict: PEP dictionary (raw project)
         :param bool force: overwrite project if exists
         :return: None
@@ -231,6 +236,7 @@ class PEPHubClient(RequestManager):
     ) -> dict:
         """project_name
         Request PEPhub and return the requested project as peppy.Project object.
+
         :param registry_path: Project namespace, eg. "geo/GSE124224:tag"
         :param query_param: Optional variables to be passed to PEPhub
         :param jwt_data: JWT token.
@@ -266,6 +272,7 @@ class PEPHubClient(RequestManager):
     def _set_registry_data(self, query_string: str) -> None:
         """
         Parse provided query string to extract project name, sample name, etc.
+
         :param query_string: Passed by user. Contain information needed to locate the project.
         :return: Parsed query string.
         """
@@ -278,6 +285,7 @@ class PEPHubClient(RequestManager):
     def _get_header(jwt_data: Optional[str] = None) -> dict:
         """
         Create Authorization header
+
         :param jwt_data: jwt string
         :return: Authorization dict
         """
@@ -289,6 +297,7 @@ class PEPHubClient(RequestManager):
     def _build_pull_request_url(self, query_param: dict = None) -> str:
         """
         Build request for getting projects form pephub
+
         :param query_param: dict of parameters used in query string
         :return: url string
         """
@@ -306,6 +315,7 @@ class PEPHubClient(RequestManager):
     def _build_push_request_url(namespace: str) -> str:
         """
         Build project uplaod request used in pephub
+
         :param namespace: namespace where project will be uploaded
         :return: url string
         """
@@ -316,6 +326,7 @@ class PEPHubClient(RequestManager):
         """
         Grab all the variables passed by user (if any) and parse them to match the format specified
         by PEPhub API for query parameters.
+
         :param pep_variables: dict of query parameters
         :return: PEPHubClient variables transformed into string in correct format.
         """

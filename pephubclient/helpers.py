@@ -31,6 +31,7 @@ class RequestManager:
     def decode_response(response: requests.Response, encoding: str = "utf-8") -> str:
         """
         Decode the response from GitHub and pack the returned data into appropriate model.
+
         :param response: Response from GitHub.
         :param encoding: Response encoding [Default: utf-8]
         :return: Response data as an instance of correct model.

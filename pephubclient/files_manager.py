@@ -32,6 +32,7 @@ class FilesManager:
     def create_project_folder(registry_path: RegistryPath) -> str:
         """
         Create new project folder
+
         :param registry_path: project registry path
         :return: folder_path
         """
@@ -66,6 +67,7 @@ class FilesManager:
     def _create_filename_to_save_downloaded_project(registry_path: RegistryPath) -> str:
         """
         Takes query string and creates output filename to save the project to.
+
         :param registry_path: Query string that was used to find the project.
         :return: Filename uniquely identifying the project.
         """

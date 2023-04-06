@@ -19,6 +19,7 @@ class PEPHubTokenExchangeException(Exception):
     def __init__(self, reason: str = ""):
         """
         Optionally provide explanation for exceptional condition.
+
         :param str reason: some context or perhaps just a value that
             could not be interpreted as an accession
         """
