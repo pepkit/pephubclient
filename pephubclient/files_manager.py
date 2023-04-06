@@ -29,7 +29,7 @@ class FilesManager:
                 return f.read()
 
     @staticmethod
-    def crete_project_folder(registry_path: RegistryPath) -> str:
+    def create_project_folder(registry_path: RegistryPath) -> str:
         """
         Create new project folder
         :param registry_path: project registry path

@@ -196,7 +196,7 @@ class PEPHubClient(RequestManager):
         else:
             subsample_list = None
         reg_path_model = RegistryPath(**parse_registry_path(reg_path))
-        folder_path = FilesManager.crete_project_folder(registry_path=reg_path_model)
+        folder_path = FilesManager.create_project_folder(registry_path=reg_path_model)
 
         yaml_full_path = os.path.join(folder_path, f"{project_name}_config.yaml")
         sample_full_path = os.path.join(folder_path, config_dict["sample_table"])

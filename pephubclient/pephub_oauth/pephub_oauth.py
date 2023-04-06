@@ -103,7 +103,4 @@ class PEPHubAuth(RequestManager):
         except json.JSONDecodeError:
             raise Exception("Something went wrong with GitHub response")
 
-        try:
-            return model(**content)
-        except Exception:
-            raise Exception()
+        return model(**content)

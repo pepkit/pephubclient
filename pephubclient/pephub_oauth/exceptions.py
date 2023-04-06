@@ -14,7 +14,7 @@ class PEPHubResponseException(Exception):
 
 
 class PEPHubTokenExchangeException(Exception):
-    """Request response exception. Used when response != 200"""
+    """Exception in exchanging device code on token == 400"""
 
     def __init__(self, reason: str = ""):
         """

@@ -1,6 +1,7 @@
 from typing import Optional
 
-from pydantic import BaseModel, Extra, Field, validator
+import pydantic
+from pydantic import BaseModel, Extra, Field
 
 
 class ProjectDict(BaseModel):
@@ -8,7 +9,7 @@ class ProjectDict(BaseModel):
     Project dict (raw) model
     """
 
-    description: Optional[str] = ""
+    description: str = ""
     config: dict = Field(alias="_config")
     subsample_dict: Optional[list] = Field(alias="_subsample_dict")
     name: str
@@ -29,8 +30,6 @@ class ProjectUploadData(BaseModel):
     is_private: Optional[bool] = False
     overwrite: Optional[bool] = False
 
-    @validator("tag")
+    @pydantic.validator("tag")
     def tag_should_not_be_none(cls, v):
-        if v:
-            return v
-        return "default"
+        return v or "default"

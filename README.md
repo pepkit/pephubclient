@@ -25,7 +25,7 @@ To login, use the `login` argument; to logout, use `logout`.
 │ logout                Logout                                                                                 │
 │ pull                  Download and save project locally.                                                     │
 │ push                  Upload/update project in PEPhub                                                        │
-│ version               Version                                                                                │
+│ version               Print package version                                                                  │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ```
 
@@ -40,7 +40,7 @@ To login, use the `login` argument; to logout, use `logout`.
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ╭─ Options ────────────────────────────────────────────────────────────────────────────────────────────────────╮                                        
 │                                         [default: default]                                                   │
-│ --force             --no-force          Last name of person to greet. [default: no-force]                    │
+│ --force             --no-force          Overwrite project if exists [default: no-force]                      │
 │ --help                                  Show this message and exit.                                          │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 

@@ -39,8 +39,8 @@ def pull(
     """
     call_client_func(
         _client.pull,
-        project_registry_path = project_registry_path,
-        force = force,
+        project_registry_path=project_registry_path,
+        force=force,
     )
 
 
