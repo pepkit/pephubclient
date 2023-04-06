@@ -10,7 +10,6 @@ from pephubclient.exceptions import PEPExistsError
 
 
 class FilesManager:
-
     @staticmethod
     def save_jwt_data_to_file(path: str, jwt_data: str) -> None:
         """

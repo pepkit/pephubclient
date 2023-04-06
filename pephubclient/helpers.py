@@ -82,6 +82,4 @@ def call_client_func(func: Callable[..., Any], **kwargs) -> Any:
         MessageHandler.print_error(f"{err}")
 
     except PEPExistsError as err:
-        MessageHandler.print_warning(
-            f"PEP already exists. {err}"
-        )
+        MessageHandler.print_warning(f"PEP already exists. {err}")

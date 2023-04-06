@@ -16,9 +16,7 @@ def login():
     """
     Login to PEPhub
     """
-    call_client_func(
-        _client.login
-    )
+    call_client_func(_client.login)
 
 
 @app.command()
@@ -72,7 +70,6 @@ def push(
         is_private=is_private,
         force=force,
     )
-
 
 
 @app.command()
