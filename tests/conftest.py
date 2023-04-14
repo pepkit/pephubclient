@@ -17,7 +17,7 @@ def device_code_return():
 @pytest.fixture()
 def test_raw_pep_return():
     sample_prj = {
-        "description": "sample-desc",
+        "description": None,
         "config": {"This": "is config"},
         "subsample_dict": [],
         "name": "sample name",

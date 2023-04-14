@@ -3,9 +3,15 @@ import sys
 
 from setuptools import setup
 
-from pephubclient import __app_name__, __author__, __version__
+with open(os.path.join("pephubclient", "__init__.py")) as f:
+    for line in f:
+        if line.startswith("__app_name__"):
+            PACKAGE = line.split("=")[1].strip().strip('"')
+        if line.startswith("__author__"):
+            AUTHOR = line.split("=")[1].strip().strip('"')
+        if line.startswith("__version__"):
+            VERSION = line.split("=")[1].strip().strip('"')
 
-PACKAGE = __app_name__
 REQDIR = "requirements"
 
 # Additional keyword arguments for setup().
@@ -26,7 +32,7 @@ with open("README.md") as f:
 setup(
     name=PACKAGE,
     packages=[PACKAGE],
-    version=__version__,
+    version=VERSION,
     description="PEPhub command line interface.",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -41,7 +47,7 @@ setup(
     ],
     keywords="project, bioinformatics, metadata",
     url=f"https://github.com/databio/{PACKAGE}/",
-    author=__author__,
+    author=AUTHOR,
     license="BSD2",
     entry_points={
         "console_scripts": [
