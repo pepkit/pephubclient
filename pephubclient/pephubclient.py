@@ -30,8 +30,11 @@ urllib3.disable_warnings()
 
 class PEPHubClient(RequestManager):
     USER_DATA_FILE_NAME = "jwt.txt"
+    home_path = os.getenv("HOME")
+    if not home_path:
+        home_path = os.path.expanduser("~")
     PATH_TO_FILE_WITH_JWT = (
-        os.path.join(os.getenv("HOME"), ".pephubclient/") + USER_DATA_FILE_NAME
+        os.path.join(home_path, ".pephubclient/") + USER_DATA_FILE_NAME
     )
 
     def __init__(self):
