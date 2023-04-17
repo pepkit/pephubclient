@@ -77,11 +77,8 @@ def call_client_func(func: Callable[..., Any], **kwargs) -> Any:
     try:
         func(**kwargs)
     except ConnectionError as err:
-        MessageHandler.print_error(
-            f"Failed to connect to server. Try later. {err}"
-        )
+        MessageHandler.print_error(f"Failed to connect to server. Try later. {err}")
     except ResponseError as err:
         MessageHandler.print_error(f"{err}")
-
     except PEPExistsError as err:
         MessageHandler.print_warning(f"PEP already exists. {err}")

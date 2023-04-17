@@ -79,6 +79,6 @@ def version_callback(value: bool):
 @app.callback()
 def common(
     ctx: typer.Context,
-    version: bool = typer.Option(None, "--version", "-v", callback=version_callback),
+    version: bool = typer.Option(None, "--version", "-v", callback=version_callback, help="App version"),
 ):
     pass
