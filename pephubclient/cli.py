@@ -70,9 +70,15 @@ def push(
     )
 
 
-@app.command()
-def version():
-    """
-    Package version
-    """
-    print(f"{__app_name__} v{__version__}")
+def version_callback(value: bool):
+    if value:
+        typer.echo(f"{__app_name__} version: {__version__}")
+        raise typer.Exit()
+
+
+@app.callback()
+def common(
+    ctx: typer.Context,
+    version: bool = typer.Option(None, "--version", "-v", callback=version_callback),
+):
+    pass
