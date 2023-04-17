@@ -1,34 +1,86 @@
 import typer
-from github_oauth_client.github_oauth_client import GitHubOAuthClient
+
 from pephubclient import __app_name__, __version__
+from pephubclient.helpers import call_client_func
 from pephubclient.pephubclient import PEPHubClient
-from pephubclient.models import ClientData
 
+_client = PEPHubClient()
 
-GITHUB_CLIENT_ID = "20a452cc59b908235e50"
-
-
-pep_hub_client = PEPHubClient()
-github_client = GitHubOAuthClient()
 app = typer.Typer()
-client_data = ClientData(client_id=GITHUB_CLIENT_ID)
 
 
 @app.command()
 def login():
-    pep_hub_client.login(client_data)
+    """
+    Login to PEPhub
+    """
+    call_client_func(_client.login)
 
 
 @app.command()
 def logout():
-    pep_hub_client.logout()
+    """
+    Logout
+    """
+    _client.logout()
 
 
 @app.command()
-def pull(project_query_string: str):
-    pep_hub_client.pull(project_query_string)
+def pull(
+    project_registry_path: str,
+    force: bool = typer.Option(False, help="Overwrite project if it exists."),
+):
+    """
+    Download and save project locally.
+    """
+    call_client_func(
+        _client.pull,
+        project_registry_path=project_registry_path,
+        force=force,
+    )
 
 
 @app.command()
-def version():
-    print(f"{__app_name__} v{__version__}")
+def push(
+    cfg: str = typer.Argument(
+        ...,
+        help="Project config file (YAML) or sample table (CSV/TSV)"
+        "with one row per sample to constitute project",
+    ),
+    namespace: str = typer.Option(..., help="Project namespace"),
+    name: str = typer.Option(..., help="Project name"),
+    tag: str = typer.Option(None, help="Project tag"),
+    force: bool = typer.Option(
+        False, help="Force push to the database. Use it to update, or upload project."
+    ),
+    is_private: bool = typer.Option(False, help="Upload project as private."),
+):
+    """
+    Upload/update project in PEPhub
+    """
+
+    call_client_func(
+        _client.push,
+        cfg=cfg,
+        namespace=namespace,
+        name=name,
+        tag=tag,
+        is_private=is_private,
+        force=force,
+    )
+
+
+def version_callback(value: bool):
+    if value:
+        typer.echo(f"{__app_name__} version: {__version__}")
+        raise typer.Exit()
+
+
+@app.callback()
+def common(
+    ctx: typer.Context,
+    version: bool = typer.Option(
+        None, "--version", "-v", callback=version_callback, help="App version"
+    ),
+):
+    pass

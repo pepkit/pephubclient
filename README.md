@@ -1,24 +1,80 @@
 # `PEPHubClient`
 
-`PEPHubClient` is a tool to provide Python and CLI interface for `pephub`.
-Authorization is based on `OAuth` with using GitHub.
+[![PEP compatible](https://pepkit.github.io/img/PEP-compatible-green.svg)](https://pepkit.github.io)
+![Run pytests](https://github.com/pepkit/pephubclient/workflows/Run%20pytests/badge.svg)
+[![pypi-badge](https://img.shields.io/pypi/v/pephubclient)](https://pypi.org/project/pephubclient)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-The authorization process is slightly complex and needs more explanation.
-The explanation will be provided based on two commands:
+`PEPHubClient` is a tool to provide Python API and CLI for [PEPhub](https://pephub.databio.org).
 
+`pephubclient` features: 
+1) `push` (upload) projects)
+2) `pull` (download projects)
 
-## 1. `pephubclient login`
-To authenticate itself user must execute `pephubclient login` command (1).
-Command triggers the process of authenticating with GitHub.
-`PEPHubClient` sends the request for user and device verification codes (2), and
-GitHub responds with the data (3). Next, if user is not logged in, GitHub
-asks for login (4), user logs in (5) and then GitHub asks to input 
-verification code (6) that is shown to user in the CLI. 
-After inputting the correct verification code (7), `PEPHubClient`
-sends the request to GitHub and asks about access token (8), which is then
-provided by GitHub based on data from authentication (9).
-![](static/pephubclient_login.png)
+Additionally, our client supports pephub authorization.
+The authorization process is based on pephub device authorization protocol.
+To upload projects or to download private projects, user must be authorized through pephub.
 
+To login, use the `login` argument; to logout, use `logout`.
 
-## 2. `pephubclient pull project/name:tag`
-![](static/pephubclient_pull.png)
+----
+```text
+$ phc --help
+                                                                                                                   
+ Usage: pephubclient [OPTIONS] COMMAND [ARGS]...                                                                   
+                                                                                                                   
+╭─ Options ───────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ --version             -v                                                                                        │
+│ --install-completion            Install completion for the current shell.                                       │
+│ --show-completion               Show completion for the current shell, to copy it or customize the              │
+│                                 installation.                                                                   │
+│ --help                          Show this message and exit.                                                     │
+╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭─ Commands ──────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ login               Login to PEPhub                                                                             │
+│ logout              Logout                                                                                      │
+│ pull                Download and save project locally.                                                          │
+│ push                Upload/update project in PEPhub                                                             │
+╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+```
+
+```text
+$ phc pull --help
+                                                                                                                   
+ Usage: pephubclient pull [OPTIONS] PROJECT_REGISTRY_PATH                                                          
+                                                                                                                   
+ Download and save project locally.                                                                                
+                                                                                                                   
+╭─ Arguments ─────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ *    project_registry_path      TEXT  [default: None] [required]                                                │
+╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭─ Options ───────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ --force    --no-force      Overwrite project if it exists. [default: no-force]                                  │
+│ --help                     Show this message and exit.                                                          │
+╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+```
+
+```text
+$ phc push --help
+                                                                                                                   
+ Usage: pephubclient push [OPTIONS] CFG                                                                            
+                                                                                                                   
+ Upload/update project in PEPhub                                                                                   
+                                                                                                                   
+╭─ Arguments ─────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ *    cfg      TEXT  Project config file (YAML) or sample table (CSV/TSV)with one row per sample to constitute   │
+│                     project                                                                                     │
+│                     [default: None]                                                                             │
+│                     [required]                                                                                  │
+╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭─ Options ───────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ *  --namespace                        TEXT  Project namespace [default: None] [required]                        │
+│ *  --name                             TEXT  Project name [default: None] [required]                             │
+│    --tag                              TEXT  Project tag [default: None]                                         │
+│    --force         --no-force               Force push to the database. Use it to update, or upload project.    │
+│                                             [default: no-force]                                                 │
+│    --is-private    --no-is-private          Upload project as private. [default: no-is-private]                 │
+│    --help                                   Show this message and exit.                                         │
+╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+```

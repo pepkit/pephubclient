@@ -1,0 +1,5 @@
+black
+pytest
+python-dotenv
+pytest-mock
+flake8

@@ -1,5 +1,6 @@
 lint:
-	black . && isort . && flake8
+	# black should be last in the list, as it lint the code. Tests can fail if order will be different
+	flake8 && isort . && black .
 
 run-coverage:
 	coverage run -m pytest
