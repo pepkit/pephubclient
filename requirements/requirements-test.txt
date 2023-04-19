@@ -3,3 +3,5 @@ pytest
 python-dotenv
 pytest-mock
 flake8
+coveralls
+pytest-cov
