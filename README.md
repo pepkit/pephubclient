@@ -2,6 +2,7 @@
 
 [![PEP compatible](https://pepkit.github.io/img/PEP-compatible-green.svg)](https://pepkit.github.io)
 ![Run pytests](https://github.com/pepkit/pephubclient/workflows/Run%20pytests/badge.svg)
+[![codecov](https://codecov.io/gh/pepkit/pephubclient/branch/dev/graph/badge.svg)](https://codecov.io/gh/pepkit/pephubclient)
 [![pypi-badge](https://img.shields.io/pypi/v/pephubclient)](https://pypi.org/project/pephubclient)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
