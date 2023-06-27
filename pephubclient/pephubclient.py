@@ -271,7 +271,9 @@ class PEPHubClient(RequestManager):
         if pephub_response.status_code == ResponseStatusCodes.NOT_EXIST:
             raise ResponseError("File does not exist, or you are unauthorized.")
         if pephub_response.status_code == ResponseStatusCodes.INTERNAL_ERROR:
-            raise ResponseError("Internal server error.")
+            raise ResponseError(
+                f"Internal server error. Unexpected return value. Error: {pephub_response.status_code}"
+            )
 
     def _set_registry_data(self, query_string: str) -> None:
         """
