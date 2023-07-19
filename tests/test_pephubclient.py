@@ -87,7 +87,7 @@ class TestSmoke:
             ),
             (
                 500,
-                "Internal server error.",
+                "Internal server error. Unexpected return value. Error: 500",
             ),
         ],
     )

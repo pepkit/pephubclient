@@ -4,8 +4,8 @@ from typing import Optional
 import pydantic
 from pydantic import BaseModel
 
-PEPHUB_BASE_URL = "https://pephub.databio.org/"
-# PEPHUB_BASE_URL = "http://0.0.0.0:8000/"
+# PEPHUB_BASE_URL = "https://pephub.databio.org/"
+PEPHUB_BASE_URL = "http://0.0.0.0:8000/"
 PEPHUB_PEP_API_BASE_URL = f"{PEPHUB_BASE_URL}api/v1/projects/"
 PEPHUB_PUSH_URL = f"{PEPHUB_BASE_URL}api/v1/namespaces/{{namespace}}/projects/json"
 
