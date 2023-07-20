@@ -17,19 +17,17 @@ def device_code_return():
 @pytest.fixture()
 def test_raw_pep_return():
     sample_prj = {
-        "description": None,
-        "config": {"This": "is config"},
-        "subsample_dict": [],
-        "name": "sample name",
-        "sample_dict": {
-            "organism": {"0": "pig", "1": "pig", "2": "frog", "3": "frog"},
-            "sample_name": {
-                "0": "pig_0h",
-                "1": "pig_1h",
-                "2": "frog_0h",
-                "3": "frog_1h",
-            },
+        "config": {
+            "This": "is config",
+            "description": "desc",
+            "name": "sample name",
         },
+        "subsample_list": [],
+        "sample_list": [
+            {"time": "0", "file_path": "source1", "sample_name": "pig_0h"},
+            {"time": "1", "file_path": "source1", "sample_name": "pig_1h"},
+            {"time": "0", "file_path": "source1", "sample_name": "frog_0h"},
+        ],
     }
     return json.dumps(sample_prj)
 

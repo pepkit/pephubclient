@@ -4,6 +4,7 @@ from typing import NoReturn, Optional
 
 import pandas as pd
 import peppy
+from peppy.const import NAME_KEY, DESC_KEY, CONFIG_KEY
 import requests
 import urllib3
 from pydantic.error_wrappers import ValidationError
@@ -145,7 +146,10 @@ class PEPHubClient(RequestManager):
             project["name"] = name
 
         upload_data = ProjectUploadData(
-            pep_dict=project.to_dict(extended=True),
+            pep_dict=project.to_dict(
+                extended=True,
+                orient="records",
+            ),
             tag=tag,
             is_private=is_private,
             overwrite=force,
@@ -167,6 +171,10 @@ class PEPHubClient(RequestManager):
             )
         elif pephub_response.status_code == ResponseStatusCodes.UNAUTHORIZED:
             raise ResponseError("Unauthorized! Failure in uploading project.")
+        elif pephub_response.status_code == ResponseStatusCodes.FORBIDDEN:
+            raise ResponseError(
+                "User does not have permission to write to this namespace!"
+            )
         else:
             raise ResponseError("Unexpected Response Error.")
         return None
@@ -190,7 +198,7 @@ class PEPHubClient(RequestManager):
         def full_path(fn: str) -> str:
             return os.path.join(folder_path, fn)
 
-        project_name = project_dict["name"]
+        project_name = project_dict[CONFIG_KEY][NAME_KEY]
         sample_table_filename = "sample_table.csv"
         yaml_full_path = full_path(f"{project_name}_config.yaml")
         sample_full_path = full_path(sample_table_filename)
@@ -203,9 +211,9 @@ class PEPHubClient(RequestManager):
                     f"{len(extant)} file(s) exist(s): {', '.join(extant)}"
                 )
 
-        config_dict = project_dict.get("_config")
-        config_dict["name"] = project_name
-        config_dict["description"] = project_dict["description"]
+        config_dict = project_dict.get(CONFIG_KEY)
+        config_dict[NAME_KEY] = project_name
+        config_dict[DESC_KEY] = project_dict[CONFIG_KEY][DESC_KEY]
         config_dict["sample_table"] = sample_table_filename
 
         sample_pandas = pd.DataFrame(project_dict.get("_sample_dict", {}))
@@ -251,6 +259,8 @@ class PEPHubClient(RequestManager):
         :param jwt_data: JWT token.
         :return: Raw project in dict.
         """
+        if not jwt_data:
+            jwt_data = FilesManager.load_jwt_data_from_file(self.PATH_TO_FILE_WITH_JWT)
         query_param = query_param or {}
         query_param["raw"] = "true"
 
@@ -271,7 +281,9 @@ class PEPHubClient(RequestManager):
         if pephub_response.status_code == ResponseStatusCodes.NOT_EXIST:
             raise ResponseError("File does not exist, or you are unauthorized.")
         if pephub_response.status_code == ResponseStatusCodes.INTERNAL_ERROR:
-            raise ResponseError("Internal server error.")
+            raise ResponseError(
+                f"Internal server error. Unexpected return value. Error: {pephub_response.status_code}"
+            )
 
     def _set_registry_data(self, query_string: str) -> None:
         """
