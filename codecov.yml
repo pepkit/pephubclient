@@ -3,3 +3,19 @@ ignore:
   - "*/__main__.py"
   - "*/__init__.py"
   - "setup.py"
+
+coverage:
+  status:
+    project:
+      default: false  # disable the default status that measures entire project
+      tests:
+        paths:
+          - "tests/"
+        target: 100%
+      source:
+        paths:
+          - "jupytext/"
+        target: 70%
+    patch:
+      default:
+        target: 70%
