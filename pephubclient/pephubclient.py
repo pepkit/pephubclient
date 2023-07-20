@@ -4,7 +4,13 @@ from typing import NoReturn, Optional
 
 import pandas as pd
 import peppy
-from peppy.const import NAME_KEY, DESC_KEY, CONFIG_KEY
+from peppy.const import (
+    NAME_KEY,
+    DESC_KEY,
+    CONFIG_KEY,
+    SUBSAMPLE_RAW_LIST_KEY,
+    SAMPLE_RAW_DICT_KEY,
+)
 import requests
 import urllib3
 from pydantic.error_wrappers import ValidationError
@@ -143,7 +149,7 @@ class PEPHubClient(RequestManager):
         """
         jwt_data = FilesManager.load_jwt_data_from_file(self.PATH_TO_FILE_WITH_JWT)
         if name:
-            project["name"] = name
+            project[NAME_KEY] = name
 
         upload_data = ProjectUploadData(
             pep_dict=project.to_dict(
@@ -216,10 +222,11 @@ class PEPHubClient(RequestManager):
         config_dict[DESC_KEY] = project_dict[CONFIG_KEY][DESC_KEY]
         config_dict["sample_table"] = sample_table_filename
 
-        sample_pandas = pd.DataFrame(project_dict.get("_sample_dict", {}))
+        sample_pandas = pd.DataFrame(project_dict.get(SAMPLE_RAW_DICT_KEY, {}))
 
         subsample_list = [
-            pd.DataFrame(sub_a) for sub_a in project_dict.get("_subsample_dict") or []
+            pd.DataFrame(sub_a)
+            for sub_a in project_dict.get(SUBSAMPLE_RAW_LIST_KEY) or []
         ]
 
         filenames = []
