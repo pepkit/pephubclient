@@ -1,4 +1,5 @@
-from typing import Optional
+import datetime
+from typing import Optional, List
 
 import pydantic
 from pydantic import BaseModel, Extra, Field
@@ -32,3 +33,23 @@ class ProjectUploadData(BaseModel):
     @pydantic.validator("tag")
     def tag_should_not_be_none(cls, v):
         return v or "default"
+
+
+class ProjectAnnotationModel(BaseModel):
+    namespace: str
+    name: str
+    tag: str
+    is_private: bool
+    number_of_samples: int
+    description: str
+    last_update_date: datetime.datetime
+    submission_date: datetime.datetime
+    digest: str
+    pep_schema: str
+
+
+class SearchReturnModel(BaseModel):
+    count: int
+    limit: int
+    offset: int
+    items: List[ProjectAnnotationModel]
