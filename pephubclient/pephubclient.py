@@ -196,7 +196,7 @@ class PEPHubClient(RequestManager):
     def find_project(
         self,
         namespace: str,
-        query_string: str = None,
+        query_string: str = "",
         limit: int = 100,
         offset: int = 0,
         filter_by: Literal["submission_date", "last_update_date"] = None,
@@ -222,10 +222,11 @@ class PEPHubClient(RequestManager):
             "limit": limit,
             "offset": offset,
         }
-        if filter_by:
+        if filter_by in ["submission_date", "last_update_date"]:
             query_param["filter_by"] = filter_by
-            query_param["start_date"] = start_date
-            query_param["end_date"] = end_date
+            query_param["filter_start_date"] = start_date
+            if end_date:
+                query_param["filter_end_date"] = end_date
 
         url = self._build_project_search_url(
             namespace=namespace,
