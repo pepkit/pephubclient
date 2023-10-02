@@ -1,6 +1,6 @@
 import json
 import os
-from typing import NoReturn, Optional
+from typing import NoReturn, Optional, Literal
 
 import pandas as pd
 import peppy
@@ -21,6 +21,7 @@ from pephubclient.constants import (
     PEPHUB_PUSH_URL,
     RegistryPath,
     ResponseStatusCodes,
+    PEPHUB_PEP_SEARCH_URL,
 )
 from pephubclient.exceptions import (
     IncorrectQueryStringError,
@@ -29,7 +30,12 @@ from pephubclient.exceptions import (
 )
 from pephubclient.files_manager import FilesManager
 from pephubclient.helpers import MessageHandler, RequestManager
-from pephubclient.models import ProjectDict, ProjectUploadData
+from pephubclient.models import (
+    ProjectDict,
+    ProjectUploadData,
+    SearchReturnModel,
+    ProjectAnnotationModel,
+)
 from pephubclient.pephub_oauth.pephub_oauth import PEPHubAuth
 
 urllib3.disable_warnings()
@@ -182,8 +188,64 @@ class PEPHubClient(RequestManager):
                 "User does not have permission to write to this namespace!"
             )
         else:
-            raise ResponseError("Unexpected Response Error.")
+            raise ResponseError(
+                f"Unexpected Response Error. {pephub_response.status_code}"
+            )
         return None
+
+    def find_project(
+        self,
+        namespace: str,
+        query_string: str = "",
+        limit: int = 100,
+        offset: int = 0,
+        filter_by: Literal["submission_date", "last_update_date"] = None,
+        start_date: str = None,
+        end_date: str = None,
+    ) -> SearchReturnModel:
+        """
+        Find project in specific namespace and return list of PEP annotation
+
+        :param namespace: Namespace where to search for projects
+        :param query_string: Search query
+        :param limit: Return limit
+        :param offset: Return offset
+        :param filter_by: Use filter date. Option: [submission_date, last_update_date]
+        :param start_date: filter beginning date
+        :param end_date: filter end date (if none today's date is used)
+        :return:
+        """
+        jwt_data = FilesManager.load_jwt_data_from_file(self.PATH_TO_FILE_WITH_JWT)
+
+        query_param = {
+            "q": query_string,
+            "limit": limit,
+            "offset": offset,
+        }
+        if filter_by in ["submission_date", "last_update_date"]:
+            query_param["filter_by"] = filter_by
+            query_param["filter_start_date"] = start_date
+            if end_date:
+                query_param["filter_end_date"] = end_date
+
+        url = self._build_project_search_url(
+            namespace=namespace,
+            query_param=query_param,
+        )
+
+        pephub_response = self.send_request(
+            method="GET",
+            url=url,
+            headers=self._get_header(jwt_data),
+            json=None,
+            cookies=None,
+        )
+        if pephub_response.status_code == ResponseStatusCodes.OK:
+            decoded_response = self._handle_pephub_response(pephub_response)
+            project_list = []
+            for project_found in json.loads(decoded_response)["items"]:
+                project_list.append(ProjectAnnotationModel(**project_found))
+            return SearchReturnModel(**json.loads(decoded_response))
 
     @staticmethod
     def _save_raw_pep(
@@ -333,6 +395,21 @@ class PEPHubClient(RequestManager):
         endpoint += variables_string
 
         return PEPHUB_PEP_API_BASE_URL + endpoint
+
+    def _build_project_search_url(
+        self, namespace: str, query_param: dict = None
+    ) -> str:
+        """
+        Build request for searching projects form pephub
+
+        :param query_param: dict of parameters used in query string
+        :return: url string
+        """
+
+        variables_string = PEPHubClient._parse_query_param(query_param)
+        endpoint = variables_string
+
+        return PEPHUB_PEP_SEARCH_URL.format(namespace=namespace) + endpoint
 
     @staticmethod
     def _build_push_request_url(namespace: str) -> str:
