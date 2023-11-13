@@ -5,6 +5,7 @@ import pytest
 
 from pephubclient.exceptions import ResponseError
 from pephubclient.pephubclient import PEPHubClient
+from pephubclient.helpers import is_registry_path
 
 SAMPLE_PEP = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
@@ -150,7 +151,7 @@ class TestSmoke:
 
     def test_search_prj(self, mocker):
         return_value = b'{"count":1,"limit":100,"offset":0,"items":[{"namespace":"namespace1","name":"basic","tag":"default","is_private":false,"number_of_samples":2,"description":"None","last_update_date":"2023-08-27 19:07:31.552861+00:00","submission_date":"2023-08-27 19:07:31.552858+00:00","digest":"08cbcdbf4974fc84bee824c562b324b5","pep_schema":"random_schema_name"}],"session_info":null,"can_edit":false}'
-        requests_mock = mocker.patch(
+        mocker.patch(
             "requests.request",
             return_value=Mock(content=return_value, status_code=200),
         )
@@ -158,3 +159,45 @@ class TestSmoke:
         return_value = PEPHubClient().find_project(namespace="namespace1")
         assert return_value.count == 1
         assert len(return_value.items) == 1
+
+
+class TestHelpers:
+    @pytest.mark.parametrize(
+        "input_str, expected_output",
+        [
+            (
+                "databio/pep:default",
+                True,
+            ),
+            (
+                "pephub.databio.org::databio/pep:default",
+                True,
+            ),
+            (
+                "pephub.databio.org://databio/pep:default",
+                True,
+            ),
+            (
+                "databio/pep",
+                True,
+            ),
+            (
+                "databio/pep/default",
+                False,
+            ),
+            (
+                "some/random/path/to.yaml",
+                False,
+            ),
+            (
+                "path_to.csv",
+                False,
+            ),
+            (
+                "this/is/path/to.csv",
+                False,
+            ),
+        ],
+    )
+    def test_is_registry_path(self, input_str, expected_output):
+        assert is_registry_path(input_str) is expected_output

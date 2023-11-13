@@ -3,3 +3,4 @@ peppy>=0.35.7
 requests>=2.28.2
 pydantic<2.0
 pandas>=2.0.0
+ubiquerg>=0.6.3

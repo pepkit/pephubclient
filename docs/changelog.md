@@ -2,6 +2,10 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.
 
+## [0.2.1] - 2023-11-01
+### Added
+- is_registry_path checker function
+
 ## [0.2.0] - 2023-10-02
 ### Added
 - Project search functionality

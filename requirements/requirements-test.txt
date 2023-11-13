@@ -1,7 +1,9 @@
 black
+ruff
 pytest
 python-dotenv
 pytest-mock
 flake8
 coveralls
 pytest-cov
+pre-commit

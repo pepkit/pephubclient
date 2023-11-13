@@ -4,7 +4,11 @@ from typing import Any, Callable, NoReturn, Optional
 import requests
 from requests.exceptions import ConnectionError
 
+from ubiquerg import parse_registry_path
+from pydantic.error_wrappers import ValidationError
+
 from pephubclient.exceptions import PEPExistsError, ResponseError
+from pephubclient.constants import RegistryPath
 
 
 class RequestManager:
@@ -84,3 +88,18 @@ def call_client_func(func: Callable[..., Any], **kwargs) -> Any:
         MessageHandler.print_warning(f"PEP already exists. {err}")
     except OSError as err:
         MessageHandler.print_error(f"{err}")
+
+
+def is_registry_path(input_string: str) -> bool:
+    """
+    Check if input is a registry path to pephub
+    :param str input_string: path to the PEP (or registry path)
+    :return bool: True if input is a registry path
+    """
+    if input_string.endswith(".yaml"):
+        return False
+    try:
+        RegistryPath(**parse_registry_path(input_string))
+    except (ValidationError, TypeError):
+        return False
+    return True
