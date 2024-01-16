@@ -16,6 +16,9 @@ Additionally, our client supports pephub authorization.
 The authorization process is based on pephub device authorization protocol.
 To upload projects or to download private projects, user must be authorized through pephub.
 
+If you want to use your own pephub instance, you can specify it by setting `PEPHUB_BASE_URL` environment variable.
+e.g. `export PEPHUB_BASE_URL=https://pephub.databio.org` (This is original pephub instance)
+
 To login, use the `login` argument; to logout, use `logout`.
 
 ----
