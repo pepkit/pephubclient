@@ -1,7 +1,7 @@
 from pephubclient.pephubclient import PEPHubClient
 
 __app_name__ = "pephubclient"
-__version__ = "0.2.1"
+__version__ = "0.2.2"
 __author__ = "Oleksandr Khoroshevskyi, Rafal Stepien"
 
 
