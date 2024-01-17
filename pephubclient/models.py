@@ -1,8 +1,7 @@
 import datetime
 from typing import Optional, List
 
-import pydantic
-from pydantic import BaseModel, Extra, Field
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 from peppy.const import CONFIG_KEY, SUBSAMPLE_RAW_LIST_KEY, SAMPLE_RAW_DICT_KEY
 
 
@@ -15,9 +14,7 @@ class ProjectDict(BaseModel):
     subsample_list: Optional[list] = Field(alias=SUBSAMPLE_RAW_LIST_KEY)
     sample_list: list = Field(alias=SAMPLE_RAW_DICT_KEY)
 
-    class Config:
-        allow_population_by_field_name = True
-        extra = Extra.allow
+    model_config = ConfigDict(populate_by_name=True, extra="allow")
 
 
 class ProjectUploadData(BaseModel):
@@ -30,7 +27,7 @@ class ProjectUploadData(BaseModel):
     is_private: Optional[bool] = False
     overwrite: Optional[bool] = False
 
-    @pydantic.validator("tag")
+    @field_validator("tag")
     def tag_should_not_be_none(cls, v):
         return v or "default"
 

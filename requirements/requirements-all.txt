@@ -1,6 +1,6 @@
 typer>=0.7.0
-peppy>=0.35.7
+peppy>=0.40.0
 requests>=2.28.2
-pydantic<2.0
+pydantic>2.5.0
 pandas>=2.0.0
 ubiquerg>=0.6.3

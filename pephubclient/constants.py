@@ -2,10 +2,11 @@ from enum import Enum
 from typing import Optional
 import os
 
-import pydantic
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
-PEPHUB_BASE_URL = os.getenv("PEPHUB_BASE_URL", default="https://pephub.databio.org/")
+PEPHUB_BASE_URL = os.getenv(
+    "PEPHUB_BASE_URL", default="https://pephub-api.databio.org/"
+)
 # PEPHUB_BASE_URL = "http://0.0.0.0:8000/"
 PEPHUB_PEP_API_BASE_URL = f"{PEPHUB_BASE_URL}api/v1/projects/"
 PEPHUB_PEP_SEARCH_URL = f"{PEPHUB_BASE_URL}api/v1/namespaces/{{namespace}}/projects"
@@ -19,7 +20,7 @@ class RegistryPath(BaseModel):
     subitem: Optional[str]
     tag: Optional[str] = "default"
 
-    @pydantic.validator("tag")
+    @field_validator("tag")
     def tag_should_not_be_none(cls, v):
         return v or "default"
 

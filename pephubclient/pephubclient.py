@@ -13,7 +13,7 @@ from peppy.const import (
 )
 import requests
 import urllib3
-from pydantic.error_wrappers import ValidationError
+from pydantic import ValidationError
 from ubiquerg import parse_registry_path
 
 from pephubclient.constants import (
@@ -170,7 +170,7 @@ class PEPHubClient(RequestManager):
             method="POST",
             url=self._build_push_request_url(namespace=namespace),
             headers=self._get_header(jwt_data),
-            json=upload_data.dict(),
+            json=upload_data.model_dump(),
             cookies=None,
         )
         if pephub_response.status_code == ResponseStatusCodes.ACCEPTED:
@@ -345,7 +345,7 @@ class PEPHubClient(RequestManager):
             correct_proj_dict = ProjectDict(**json.loads(decoded_response))
 
             # This step is necessary because of this issue: https://github.com/pepkit/pephub/issues/124
-            return correct_proj_dict.dict(by_alias=True)
+            return correct_proj_dict.model_dump(by_alias=True)
 
         if pephub_response.status_code == ResponseStatusCodes.NOT_EXIST:
             raise ResponseError("File does not exist, or you are unauthorized.")
