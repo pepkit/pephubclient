@@ -1,11 +1,11 @@
 import json
-from typing import Any, Callable, NoReturn, Optional
+from typing import Any, Callable, Optional
 
 import requests
 from requests.exceptions import ConnectionError
 
 from ubiquerg import parse_registry_path
-from pydantic.error_wrappers import ValidationError
+from pydantic import ValidationError
 
 from pephubclient.exceptions import PEPExistsError, ResponseError
 from pephubclient.constants import RegistryPath
@@ -57,15 +57,15 @@ class MessageHandler:
     GREEN = 40
 
     @staticmethod
-    def print_error(text: str) -> NoReturn:
+    def print_error(text: str) -> None:
         print(f"\033[38;5;9m{text}\033[0m")
 
     @staticmethod
-    def print_success(text: str) -> NoReturn:
+    def print_success(text: str) -> None:
         print(f"\033[38;5;40m{text}\033[0m")
 
     @staticmethod
-    def print_warning(text: str) -> NoReturn:
+    def print_warning(text: str) -> None:
         print(f"\033[38;5;11m{text}\033[0m")
 
 

@@ -2,9 +2,13 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.
 
-## [0.2.2] - 2024-01-06
+## [0.3.0] - 2024-01-17
 ### Added
 - customization of the base pephub URL. [#22](https://github.com/pepkit/pephubclient/issues/22)
+
+### Updated 
+- PEPhub API URL
+- Increased the required pydantic version to >2.5.0
 
 ## [0.2.1] - 2023-11-01
 ### Added
