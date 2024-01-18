@@ -81,7 +81,9 @@ class PEPHubClient(RequestManager):
         )
 
         self._save_raw_pep(
-            reg_path=project_registry_path, project_dict=project_dict, force=force
+            reg_path=project_registry_path,
+            project_dict=project_dict,
+            force=force,
         )
 
     def load_project(
@@ -252,16 +254,23 @@ class PEPHubClient(RequestManager):
         reg_path: str,
         project_dict: dict,
         force: bool = False,
+        project_path: Optional[str] = None,
+        just_name: bool = False,
     ) -> None:
         """
         Save project locally.
 
+        :param str reg_path: Project registry path in PEPhub (e.g. databio/base:default)
         :param dict project_dict: PEP dictionary (raw project)
         :param bool force: overwrite project if exists
+        :param str project_path: Path where project will be saved. By default, it will be saved in current directory.
+        :param bool just_name: If True, create project folder with just name, not full path
         :return: None
         """
         reg_path_model = RegistryPath(**parse_registry_path(reg_path))
-        folder_path = FilesManager.create_project_folder(registry_path=reg_path_model)
+        folder_path = FilesManager.create_project_folder(
+            registry_path=reg_path_model, parent_path=project_path, just_name=just_name
+        )
 
         def full_path(fn: str) -> str:
             return os.path.join(folder_path, fn)
