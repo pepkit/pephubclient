@@ -14,10 +14,10 @@ PEPHUB_PUSH_URL = f"{PEPHUB_BASE_URL}api/v1/namespaces/{{namespace}}/projects/js
 
 
 class RegistryPath(BaseModel):
-    protocol: Optional[str]
+    protocol: Optional[str] = None
     namespace: str
     item: str
-    subitem: Optional[str]
+    subitem: Optional[str] = None
     tag: Optional[str] = "default"
 
     @field_validator("tag")
