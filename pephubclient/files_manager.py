@@ -29,17 +29,27 @@ class FilesManager:
                 return f.read()
 
     @staticmethod
-    def create_project_folder(registry_path: RegistryPath) -> str:
+    def create_project_folder(
+        registry_path: RegistryPath, parent_path: str, just_name: bool = False
+    ) -> str:
         """
         Create new project folder
 
         :param registry_path: project registry path
+        :param parent_path: parent path to create folder in
+        :param just_name: if True, create folder with just name, not full path
         :return: folder_path
         """
-        folder_name = FilesManager._create_filename_to_save_downloaded_project(
-            registry_path
-        )
-        folder_path = os.path.join(os.getcwd(), folder_name)
+        if just_name:
+            folder_name = registry_path.item
+        else:
+            folder_name = FilesManager._create_filename_to_save_downloaded_project(
+                registry_path
+            )
+        if parent_path:
+            if not Path(parent_path).exists():
+                raise OSError(f"Parent path does not exist. Provided path: {parent_path}")
+        folder_path = os.path.join(parent_path or os.getcwd(), folder_name)
         Path(folder_path).mkdir(parents=True, exist_ok=True)
         return folder_path
 

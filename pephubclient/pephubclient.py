@@ -73,6 +73,10 @@ class PEPHubClient(RequestManager):
             registry_path=project_registry_path, jwt_data=jwt_data
         )
 
+        self._save_raw_pep(
+            reg_path=project_registry_path,
+            project_dict=project_dict,
+            force=force
         save_raw_pep(
             reg_path=project_registry_path, project_dict=project_dict, force=force
         )
@@ -239,6 +243,80 @@ class PEPHubClient(RequestManager):
             for project_found in json.loads(decoded_response)["items"]:
                 project_list.append(ProjectAnnotationModel(**project_found))
             return SearchReturnModel(**json.loads(decoded_response))
+
+    @staticmethod
+    def _save_raw_pep(
+        reg_path: str,
+        project_dict: dict,
+        force: bool = False,
+        project_path: Optional[str] = None,
+        just_name: bool = False,
+    ) -> None:
+        """
+        Save project locally.
+
+        :param str reg_path: Project registry path in PEPhub (e.g. databio/base:default)
+        :param dict project_dict: PEP dictionary (raw project)
+        :param bool force: overwrite project if exists
+        :param str project_path: Path where project will be saved. By default, it will be saved in current directory.
+        :param bool just_name: If True, create project folder with just name, not full path
+        :return: None
+        """
+        reg_path_model = RegistryPath(**parse_registry_path(reg_path))
+        folder_path = FilesManager.create_project_folder(
+            registry_path=reg_path_model, parent_path=project_path, just_name=just_name
+        )
+
+        def full_path(fn: str) -> str:
+            return os.path.join(folder_path, fn)
+
+        project_name = project_dict[CONFIG_KEY][NAME_KEY]
+        sample_table_filename = "sample_table.csv"
+        yaml_full_path = full_path(f"{project_name}_config.yaml")
+        sample_full_path = full_path(sample_table_filename)
+        if not force:
+            extant = [
+                p for p in [yaml_full_path, sample_full_path] if os.path.isfile(p)
+            ]
+            if extant:
+                raise PEPExistsError(
+                    f"{len(extant)} file(s) exist(s): {', '.join(extant)}"
+                )
+
+        config_dict = project_dict.get(CONFIG_KEY)
+        config_dict[NAME_KEY] = project_name
+        config_dict[DESC_KEY] = project_dict[CONFIG_KEY][DESC_KEY]
+        config_dict["sample_table"] = sample_table_filename
+
+        sample_pandas = pd.DataFrame(project_dict.get(SAMPLE_RAW_DICT_KEY, {}))
+
+        subsample_list = [
+            pd.DataFrame(sub_a)
+            for sub_a in project_dict.get(SUBSAMPLE_RAW_LIST_KEY) or []
+        ]
+
+        filenames = []
+        for idx, subsample in enumerate(subsample_list):
+            fn = f"subsample_table{idx + 1}.csv"
+            filenames.append(fn)
+            FilesManager.save_pandas(subsample, full_path(fn), not_force=False)
+        config_dict["subsample_table"] = filenames
+
+        FilesManager.save_yaml(config_dict, yaml_full_path, not_force=False)
+        FilesManager.save_pandas(sample_pandas, sample_full_path, not_force=False)
+
+        if config_dict.get("subsample_table"):
+            for number, subsample in enumerate(subsample_list):
+                FilesManager.save_pandas(
+                    subsample,
+                    os.path.join(folder_path, config_dict["subsample_table"][number]),
+                    not_force=False,
+                )
+
+        MessageHandler.print_success(
+            f"Project was downloaded successfully -> {folder_path}"
+        )
+        return None
 
     @deprecated("This method is deprecated. Use load_raw_pep instead.")
     def _load_raw_pep(
