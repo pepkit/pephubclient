@@ -1,16 +1,10 @@
 import json
 import os
 from typing import NoReturn, Optional, Literal
+from typing_extensions import deprecated
 
-import pandas as pd
 import peppy
-from peppy.const import (
-    NAME_KEY,
-    DESC_KEY,
-    CONFIG_KEY,
-    SUBSAMPLE_RAW_LIST_KEY,
-    SAMPLE_RAW_DICT_KEY,
-)
+from peppy.const import NAME_KEY
 import requests
 import urllib3
 from pydantic import ValidationError
@@ -25,11 +19,10 @@ from pephubclient.constants import (
 )
 from pephubclient.exceptions import (
     IncorrectQueryStringError,
-    PEPExistsError,
     ResponseError,
 )
 from pephubclient.files_manager import FilesManager
-from pephubclient.helpers import MessageHandler, RequestManager
+from pephubclient.helpers import MessageHandler, RequestManager, save_raw_pep
 from pephubclient.models import (
     ProjectDict,
     ProjectUploadData,
@@ -76,11 +69,11 @@ class PEPHubClient(RequestManager):
         :return: None
         """
         jwt_data = FilesManager.load_jwt_data_from_file(self.PATH_TO_FILE_WITH_JWT)
-        project_dict = self._load_raw_pep(
+        project_dict = self.load_raw_pep(
             registry_path=project_registry_path, jwt_data=jwt_data
         )
 
-        self._save_raw_pep(
+        save_raw_pep(
             reg_path=project_registry_path, project_dict=project_dict, force=force
         )
 
@@ -97,7 +90,7 @@ class PEPHubClient(RequestManager):
         :return Project: peppy project.
         """
         jwt = FilesManager.load_jwt_data_from_file(self.PATH_TO_FILE_WITH_JWT)
-        raw_pep = self._load_raw_pep(project_registry_path, jwt, query_param)
+        raw_pep = self.load_raw_pep(project_registry_path, jwt, query_param)
         peppy_project = peppy.Project().from_dict(raw_pep)
         return peppy_project
 
@@ -247,80 +240,32 @@ class PEPHubClient(RequestManager):
                 project_list.append(ProjectAnnotationModel(**project_found))
             return SearchReturnModel(**json.loads(decoded_response))
 
-    @staticmethod
-    def _save_raw_pep(
-        reg_path: str,
-        project_dict: dict,
-        force: bool = False,
-    ) -> None:
-        """
-        Save project locally.
-
-        :param dict project_dict: PEP dictionary (raw project)
-        :param bool force: overwrite project if exists
-        :return: None
-        """
-        reg_path_model = RegistryPath(**parse_registry_path(reg_path))
-        folder_path = FilesManager.create_project_folder(registry_path=reg_path_model)
-
-        def full_path(fn: str) -> str:
-            return os.path.join(folder_path, fn)
-
-        project_name = project_dict[CONFIG_KEY][NAME_KEY]
-        sample_table_filename = "sample_table.csv"
-        yaml_full_path = full_path(f"{project_name}_config.yaml")
-        sample_full_path = full_path(sample_table_filename)
-        if not force:
-            extant = [
-                p for p in [yaml_full_path, sample_full_path] if os.path.isfile(p)
-            ]
-            if extant:
-                raise PEPExistsError(
-                    f"{len(extant)} file(s) exist(s): {', '.join(extant)}"
-                )
-
-        config_dict = project_dict.get(CONFIG_KEY)
-        config_dict[NAME_KEY] = project_name
-        config_dict[DESC_KEY] = project_dict[CONFIG_KEY][DESC_KEY]
-        config_dict["sample_table"] = sample_table_filename
-
-        sample_pandas = pd.DataFrame(project_dict.get(SAMPLE_RAW_DICT_KEY, {}))
-
-        subsample_list = [
-            pd.DataFrame(sub_a)
-            for sub_a in project_dict.get(SUBSAMPLE_RAW_LIST_KEY) or []
-        ]
-
-        filenames = []
-        for idx, subsample in enumerate(subsample_list):
-            fn = f"subsample_table{idx + 1}.csv"
-            filenames.append(fn)
-            FilesManager.save_pandas(subsample, full_path(fn), not_force=False)
-        config_dict["subsample_table"] = filenames
-
-        FilesManager.save_yaml(config_dict, yaml_full_path, not_force=False)
-        FilesManager.save_pandas(sample_pandas, sample_full_path, not_force=False)
-
-        if config_dict.get("subsample_table"):
-            for number, subsample in enumerate(subsample_list):
-                FilesManager.save_pandas(
-                    subsample,
-                    os.path.join(folder_path, config_dict["subsample_table"][number]),
-                    not_force=False,
-                )
-
-        MessageHandler.print_success(
-            f"Project was downloaded successfully -> {folder_path}"
-        )
-        return None
-
+    @deprecated("This method is deprecated. Use load_raw_pep instead.")
     def _load_raw_pep(
         self,
         registry_path: str,
         jwt_data: Optional[str] = None,
         query_param: Optional[dict] = None,
     ) -> dict:
-        """project_name
+        """
+        !!! This method is deprecated. Use load_raw_pep instead. !!!
+
+        Request PEPhub and return the requested project as peppy.Project object.
+
+        :param registry_path: Project namespace, eg. "geo/GSE124224:tag"
+        :param query_param: Optional variables to be passed to PEPhub
+        :param jwt_data: JWT token.
+        :return: Raw project in dict.
+        """
+        return self.load_raw_pep(registry_path, jwt_data, query_param)
+
+    def load_raw_pep(
+        self,
+        registry_path: str,
+        jwt_data: Optional[str] = None,
+        query_param: Optional[dict] = None,
+    ) -> dict:
+        """
         Request PEPhub and return the requested project as peppy.Project object.
 
         :param registry_path: Project namespace, eg. "geo/GSE124224:tag"
@@ -396,9 +341,8 @@ class PEPHubClient(RequestManager):
 
         return PEPHUB_PEP_API_BASE_URL + endpoint
 
-    def _build_project_search_url(
-        self, namespace: str, query_param: dict = None
-    ) -> str:
+    @staticmethod
+    def _build_project_search_url(namespace: str, query_param: dict = None) -> str:
         """
         Build request for searching projects form pephub
 
