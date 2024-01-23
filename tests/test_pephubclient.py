@@ -201,3 +201,38 @@ class TestHelpers:
     )
     def test_is_registry_path(self, input_str, expected_output):
         assert is_registry_path(input_str) is expected_output
+
+    @pytest.mark.skipif(True, reason="not implemented yet")
+    def test_save_zip_pep(self):
+        ...
+
+    @pytest.mark.skipif(True, reason="not implemented yet")
+    def test_save_unzip_pep(self):
+        ...
+
+
+@pytest.mark.skipif(True, reason="not implemented yet")
+class TestSamplesModification:
+    def test_get_sumple(self):
+        ...
+
+    def test_add_sample(self):
+        ...
+
+    def test_remove_sample(self):
+        ...
+
+    def test_update_sample(self):
+        ...
+
+
+@pytest.mark.skipif(True, reason="not implemented yet")
+class TestProjectVeiw:
+    def test_get_view(self):
+        ...
+
+    def test_create_view(self):
+        ...
+
+    def test_delete_view(self):
+        ...

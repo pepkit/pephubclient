@@ -1,5 +1,7 @@
 import json
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, Union
+import peppy
+import yaml
 import os
 import pandas as pd
 from peppy.const import (
@@ -8,6 +10,8 @@ from peppy.const import (
     CONFIG_KEY,
     SUBSAMPLE_RAW_LIST_KEY,
     SAMPLE_RAW_DICT_KEY,
+    CFG_SAMPLE_TABLE_KEY,
+    CFG_SUBSAMPLE_TABLE_KEY,
 )
 
 import requests
@@ -19,6 +23,7 @@ from pydantic import ValidationError
 from pephubclient.exceptions import PEPExistsError, ResponseError
 from pephubclient.constants import RegistryPath
 from pephubclient.files_manager import FilesManager
+from pephubclient.models import ProjectDict
 
 
 class RequestManager:
@@ -115,20 +120,69 @@ def is_registry_path(input_string: str) -> bool:
     return True
 
 
-def save_raw_pep(
-    reg_path: str,
-    project_dict: dict,
-    force: bool = False,
+def _build_filename(registry_path: RegistryPath) -> str:
+    """
+    Takes query string and creates output filename to save the project to.
+
+    :param registry_path: Query string that was used to find the project.
+    :return: Filename uniquely identifying the project.
+    """
+    filename = "_".join(filter(bool, [registry_path.namespace, registry_path.item]))
+    if registry_path.tag:
+        filename += f"_{registry_path.tag}"
+    return filename
+
+
+def _save_zip_pep(project: dict, zip_filepath: str, force: bool = False) -> None:
+    """
+    Zip and save a project
+
+    :param project: peppy project to zip
+    :param zip_filepath: path to save zip file
+    :param force: overwrite project if exists
+    """
+
+    content_to_zip = {}
+    config = project[CONFIG_KEY]
+    project_name = config[NAME_KEY]
+
+    if project[SAMPLE_RAW_DICT_KEY] is not None:
+        config[CFG_SAMPLE_TABLE_KEY] = ["sample_table.csv"]
+        content_to_zip["sample_table.csv"] = pd.DataFrame(
+            project[SAMPLE_RAW_DICT_KEY]
+        ).to_csv(index=False)
+
+    if project[SUBSAMPLE_RAW_LIST_KEY] is not None:
+        if not isinstance(project[SUBSAMPLE_RAW_LIST_KEY], list):
+            config[CFG_SUBSAMPLE_TABLE_KEY] = ["subsample_table1.csv"]
+            content_to_zip["subsample_table1.csv"] = pd.DataFrame(
+                project[SUBSAMPLE_RAW_LIST_KEY]
+            ).to_csv(index=False)
+        else:
+            config[CFG_SUBSAMPLE_TABLE_KEY] = []
+            for number, file in enumerate(project[SUBSAMPLE_RAW_LIST_KEY]):
+                file_name = f"subsample_table{number + 1}.csv"
+                config[CFG_SUBSAMPLE_TABLE_KEY].append(file_name)
+                content_to_zip[file_name] = pd.DataFrame(file).to_csv(index=False)
+
+    content_to_zip[f"{project_name}_config.yaml"] = yaml.dump(config, indent=4)
+    FilesManager.save_zip_file(content_to_zip, file_path=zip_filepath, force=force)
+
+    MessageHandler.print_success(f"Project was saved successfully -> {zip_filepath}")
+    return None
+
+
+def _save_unzipped_pep(
+    project_dict: dict, folder_path: str, force: bool = False
 ) -> None:
     """
-    Save project locally.
+    Save unzipped project to specified folder
 
-    :param dict project_dict: PEP dictionary (raw project)
-    :param bool force: overwrite project if exists
+    :param project_dict: raw pep project
+    :param folder_path: path to save project
+    :param force: overwrite project if exists
     :return: None
     """
-    reg_path_model = RegistryPath(**parse_registry_path(reg_path))
-    folder_path = FilesManager.create_project_folder(registry_path=reg_path_model)
 
     def full_path(fn: str) -> str:
         return os.path.join(folder_path, fn)
@@ -171,7 +225,48 @@ def save_raw_pep(
                 not_force=False,
             )
 
-    MessageHandler.print_success(
-        f"Project was downloaded successfully -> {folder_path}"
-    )
+    MessageHandler.print_success(f"Project was saved successfully -> {folder_path}")
     return None
+
+
+def save_pep(
+    project: Union[dict, peppy.Project],
+    reg_path: str = None,
+    force: bool = False,
+    project_path: Optional[str] = None,
+    zip: bool = False,
+) -> None:
+    """
+    Save project locally.
+
+    :param dict project: PEP dictionary (raw project)
+    :param str reg_path: Project registry path in PEPhub (e.g. databio/base:default). If not provided,
+        folder will be created with just project name.
+    :param bool force: overwrite project if exists
+    :param str project_path: Path where project will be saved. By default, it will be saved in current directory.
+    :param bool zip: If True, save project as zip file
+    :return: None
+    """
+    if isinstance(project, peppy.Project):
+        project = project.to_dict(extended=True, orient="records")
+
+    project = ProjectDict(**project).model_dump(by_alias=True)
+
+    if not project_path:
+        project_path = os.getcwd()
+
+    if reg_path:
+        file_name = _build_filename(RegistryPath(**parse_registry_path(reg_path)))
+    else:
+        file_name = project[CONFIG_KEY][NAME_KEY]
+
+    if zip:
+        _save_zip_pep(
+            project, zip_filepath=f"{os.path.join(project_path, file_name)}.zip"
+        )
+        return None
+
+    folder_path = FilesManager.create_project_folder(
+        parent_path=project_path, folder_name=file_name
+    )
+    _save_unzipped_pep(project, folder_path, force=force)
