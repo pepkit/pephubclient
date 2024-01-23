@@ -37,6 +37,8 @@ from pephubclient.models import (
     ProjectAnnotationModel,
 )
 from pephubclient.pephub_oauth.pephub_oauth import PEPHubAuth
+from pephubclient.samples import Samples
+from pephubclient.views import Views
 
 urllib3.disable_warnings()
 
@@ -52,6 +54,16 @@ class PEPHubClient(RequestManager):
 
     def __init__(self):
         self.registry_path = None
+        self.__view = Views()
+        self.__sample = Samples()
+
+    @property
+    def view(self):
+        return self.__view
+
+    @property
+    def sample(self):
+        return self.__sample
 
     def login(self) -> NoReturn:
         """

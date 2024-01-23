@@ -48,7 +48,9 @@ class FilesManager:
             )
         if parent_path:
             if not Path(parent_path).exists():
-                raise OSError(f"Parent path does not exist. Provided path: {parent_path}")
+                raise OSError(
+                    f"Parent path does not exist. Provided path: {parent_path}"
+                )
         folder_path = os.path.join(parent_path or os.getcwd(), folder_name)
         Path(folder_path).mkdir(parents=True, exist_ok=True)
         return folder_path
