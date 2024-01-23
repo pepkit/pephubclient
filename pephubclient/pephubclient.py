@@ -58,11 +58,11 @@ class PEPHubClient(RequestManager):
         self.__sample = Samples()
 
     @property
-    def view(self):
+    def view(self) -> Views:
         return self.__view
 
     @property
-    def sample(self):
+    def sample(self) -> Samples:
         return self.__sample
 
     def login(self) -> NoReturn:

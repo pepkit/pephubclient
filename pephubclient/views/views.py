@@ -1,5 +1,12 @@
 class Views:
-    def __init__(self, jwt_data: str):
+    """
+    Class for managing views in PEPhub and provides methods for
+        getting, creating, updating and removing views.
+
+    This class aims to warp the Views API for easier maintenance and
+    better user experience.
+    """
+    def __init__(self, jwt_data: str = None):
         self._jwt_data = jwt_data
 
     def get(self, namespace: str, name: str, tag: str, view_name: str):
