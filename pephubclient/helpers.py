@@ -262,7 +262,9 @@ def save_pep(
 
     if zip:
         _save_zip_pep(
-            project, zip_filepath=f"{os.path.join(project_path, file_name)}.zip"
+            project,
+            zip_filepath=f"{os.path.join(project_path, file_name)}.zip",
+            force=force,
         )
         return None
 
