@@ -69,6 +69,9 @@ class FilesManager:
     def delete_file_if_exists(filename: str) -> None:
         with suppress(FileNotFoundError):
             os.remove(filename)
+            print(
+                f"\033[38;5;11m{f'File was deleted successfully -> {filename}'}\033[0m"
+            )
 
     @staticmethod
     def check_writable(path: str, force: bool = True):
