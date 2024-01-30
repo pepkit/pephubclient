@@ -61,6 +61,34 @@ class RequestManager:
         except json.JSONDecodeError as err:
             raise ResponseError(f"Error in response encoding format: {err}")
 
+    @staticmethod
+    def parse_query_param(pep_variables: dict) -> str:
+        """
+        Grab all the variables passed by user (if any) and parse them to match the format specified
+        by PEPhub API for query parameters.
+
+        :param pep_variables: dict of query parameters
+        :return: PEPHubClient variables transformed into string in correct format.
+        """
+        parsed_variables = []
+
+        for variable_name, variable_value in pep_variables.items():
+            parsed_variables.append(f"{variable_name}={variable_value}")
+        return "?" + "&".join(parsed_variables)
+
+    @staticmethod
+    def parse_header(jwt_data: Optional[str] = None) -> dict:
+        """
+        Create Authorization header
+
+        :param jwt_data: jwt string
+        :return: Authorization dict
+        """
+        if jwt_data:
+            return {"Authorization": jwt_data}
+        else:
+            return {}
+
 
 class MessageHandler:
     """
