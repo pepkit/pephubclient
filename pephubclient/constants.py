@@ -13,6 +13,12 @@ PEPHUB_PEP_SEARCH_URL = f"{PEPHUB_BASE_URL}api/v1/namespaces/{{namespace}}/proje
 PEPHUB_PUSH_URL = f"{PEPHUB_BASE_URL}api/v1/namespaces/{{namespace}}/projects/json"
 
 PEPHUB_SAMPLE_URL = f"{PEPHUB_BASE_URL}api/v1/projects/{{namespace}}/{{project}}/samples/{{sample_name}}"
+PEPHUB_VIEW_URL = (
+    f"{PEPHUB_BASE_URL}api/v1/projects/{{namespace}}/{{project}}/views/{{view_name}}"
+)
+PEPHUB_VIEW_SAMPLE_URL = (
+    f"{PEPHUB_BASE_URL}api/v1/projects/{{namespace}}/{{project}}/views/{{view_name}}/{{sample_name}}"
+)
 
 
 class RegistryPath(BaseModel):

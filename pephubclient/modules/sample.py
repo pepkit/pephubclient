@@ -1,6 +1,6 @@
 from pephubclient.helpers import RequestManager
-from pephubclient.constants import PEPHUB_SAMPLE_URL
-import json
+from pephubclient.constants import PEPHUB_SAMPLE_URL, ResponseStatusCodes
+from pephubclient.exceptions import ResponseError
 
 
 class PEPHubSample(RequestManager):
@@ -42,8 +42,8 @@ class PEPHubSample(RequestManager):
         response = self.send_request(
             method="GET", url=url, headers=self.parse_header(self.__jwt_data)
         )
-        output = dict(json.loads(self.decode_response(response)))
-        return output
+        if response.status_code == ResponseStatusCodes.OK:
+            return self.decode_response(response, output_json=True)
 
     def create(
         self,
@@ -81,8 +81,12 @@ class PEPHubSample(RequestManager):
             headers=self.parse_header(self.__jwt_data),
             json=sample_dict,
         )
-        output = self.decode_response(response)
-        return output
+        if response.status_code == ResponseStatusCodes.OK:
+            return None
+        else:
+            raise ResponseError(
+                f"Unexpected return value. Error: {response.status_code}"
+            )
 
     def update(
         self,
@@ -115,8 +119,12 @@ class PEPHubSample(RequestManager):
             headers=self.parse_header(self.__jwt_data),
             json=sample_dict,
         )
-        output = self.decode_response(response)
-        return output
+        if response.status_code == ResponseStatusCodes.OK:
+            return None
+        else:
+            raise ResponseError(
+                f"Unexpected return value. Error: {response.status_code}"
+            )
 
     def remove(self, namespace: str, name: str, tag: str, sample_name: str):
         """
@@ -139,8 +147,12 @@ class PEPHubSample(RequestManager):
             url=url,
             headers=self.parse_header(self.__jwt_data),
         )
-        output = self.decode_response(response)
-        return output
+        if response.status_code == ResponseStatusCodes.OK:
+            return None
+        else:
+            raise ResponseError(
+                f"Unexpected return value. Error: {response.status_code}"
+            )
 
     @staticmethod
     def _build_sample_request_url(namespace: str, name: str, sample_name: str) -> str:

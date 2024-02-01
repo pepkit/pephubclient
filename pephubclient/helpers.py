@@ -47,17 +47,23 @@ class RequestManager:
         )
 
     @staticmethod
-    def decode_response(response: requests.Response, encoding: str = "utf-8") -> str:
+    def decode_response(
+        response: requests.Response, encoding: str = "utf-8", output_json: bool = False
+    ) -> Union[str, dict]:
         """
         Decode the response from GitHub and pack the returned data into appropriate model.
 
         :param response: Response from GitHub.
         :param encoding: Response encoding [Default: utf-8]
+        :param output_json: If True, return response in json format
         :return: Response data as an instance of correct model.
         """
 
         try:
-            return response.content.decode(encoding)
+            if output_json:
+                return response.json()
+            else:
+                return response.content.decode(encoding)
         except json.JSONDecodeError as err:
             raise ResponseError(f"Error in response encoding format: {err}")
 
