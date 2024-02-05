@@ -245,8 +245,9 @@ class TestManual:
             "khoroshevskyi",
             "bedset1",
             "default",
-            "newf",
+            "grape1",
         )
+        ff
 
     def test_update(self):
         ff = PEPHubClient().sample.get(
@@ -269,14 +270,13 @@ class TestManual:
         ff = {
             "genome": "phc_test1",
             "sample_type": "phc_test",
-            "sample_name": "test_phc",
         }
         PEPHubClient().sample.create(
             "khoroshevskyi",
             "bedset1",
             "default",
-            "test_phc",
-            overwrite=True,
+            "new_f",
+            overwrite=False,
             sample_dict=ff,
         )
 
@@ -285,5 +285,75 @@ class TestManual:
             "khoroshevskyi",
             "bedset1",
             "default",
-            "test_phc",
+            "new_f",
+        )
+
+    # test add sample:
+    # 1. add correct 202
+    # 2. add existing 409
+    # 3. add with sample_name
+    # 4. add without sample_name
+    # 5. add with overwrite
+    # 6. add to unexisting project 404
+
+    # delete sample:
+    # 1. delete existing 202
+    # 2. delete unexisting 404
+
+    # get sample:
+    # 1. get existing 200
+    # 2. get unexisting 404
+    # 3. get with raw 200
+    # 4. get from unexisting project 404
+
+    # update sample:
+    # 1. update existing 202
+    # 2. update unexisting sample 404
+    # 3. update unexisting project 404
+
+
+class TestViews:
+
+    def test_get(self):
+        ff = PEPHubClient().view.get(
+            "khoroshevskyi",
+            "bedset1",
+            "default",
+            "test_view",
+        )
+        print(ff)
+
+    def test_create(self):
+        PEPHubClient().view.create(
+            "khoroshevskyi",
+            "bedset1",
+            "default",
+            "test_view",
+            sample_list=["orange", "grape1", "apple1"],
+        )
+
+    def test_delete(self):
+        PEPHubClient().view.delete(
+            "khoroshevskyi",
+            "bedset1",
+            "default",
+            "test_view",
+        )
+
+    def test_add_sample(self):
+        PEPHubClient().view.add_sample(
+            "khoroshevskyi",
+            "bedset1",
+            "default",
+            "test_view",
+            "apple",
+        )
+
+    def test_delete_sample(self):
+        PEPHubClient().view.remove_sample(
+            "khoroshevskyi",
+            "bedset1",
+            "default",
+            "test_view",
+            "apple",
         )

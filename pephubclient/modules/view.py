@@ -2,7 +2,11 @@ from typing import Union
 import peppy
 
 from pephubclient.helpers import RequestManager
-from pephubclient.constants import PEPHUB_VIEW_URL, PEPHUB_VIEW_SAMPLE_URL, ResponseStatusCodes
+from pephubclient.constants import (
+    PEPHUB_VIEW_URL,
+    PEPHUB_VIEW_SAMPLE_URL,
+    ResponseStatusCodes,
+)
 from pephubclient.exceptions import ResponseError
 
 
@@ -49,6 +53,12 @@ class PEPHubView(RequestManager):
             if raw:
                 return output
             return peppy.Project.from_dict(output)
+        elif response.status_code == ResponseStatusCodes.NOT_EXIST:
+            raise ResponseError("View does not exist, or you are unauthorized.")
+        else:
+            raise ResponseError(
+                f"Internal server error. Unexpected return value. Error: {response.status_code}"
+            )
 
     def create(
         self,
@@ -79,10 +89,16 @@ class PEPHubView(RequestManager):
             headers=self.parse_header(self.__jwt_data),
             json=sample_list,
         )
-        if response.status_code != ResponseStatusCodes.ACCEPTED:
+        if response.status_code == ResponseStatusCodes.ACCEPTED:
+            return None
+        elif response.status_code == ResponseStatusCodes.NOT_EXIST:
             raise ResponseError(
-                f"Unexpected return value. Error: {response.status_code}"
+                f"Project '{namespace}/{name}:{tag}' or one of the samples does not exist."
             )
+        elif response.status_code == ResponseStatusCodes.CONFLICT:
+            raise ResponseError(f"View '{view_name}' already exists in the project.")
+        else:
+            raise ResponseError(f"Unexpected return value.{response.status_code}")
 
     def delete(self, namespace: str, name: str, tag: str, view_name: str) -> None:
         """
@@ -105,19 +121,13 @@ class PEPHubView(RequestManager):
         )
 
         if response.status_code == ResponseStatusCodes.ACCEPTED:
-            pass
+            return None
         elif response.status_code == ResponseStatusCodes.NOT_EXIST:
-            raise ResponseError("File does not exist, or you are unauthorized.")
-        elif response.status_code == ResponseStatusCodes.INTERNAL_ERROR:
-            raise ResponseError(
-                f"Internal server error. Unexpected return value. Error: {response.status_code}"
-            )
+            raise ResponseError("View does not exists, or you are unauthorized.")
+        elif response.status_code == ResponseStatusCodes.UNAUTHORIZED:
+            raise ResponseError("You are unauthorized to delete this view.")
         else:
-            raise ResponseError(
-                f"Unexpected return value. Error: {response.status_code}"
-            )
-
-        return None
+            raise ResponseError("Unexpected return value. ")
 
     def add_sample(
         self,
@@ -150,7 +160,15 @@ class PEPHubView(RequestManager):
             url=url,
             headers=self.parse_header(self.__jwt_data),
         )
-        if response.status_code != ResponseStatusCodes.ACCEPTED:
+        if response.status_code == ResponseStatusCodes.ACCEPTED:
+            return None
+        elif response.status_code == ResponseStatusCodes.NOT_EXIST:
+            raise ResponseError(
+                f"Sample '{sample_name}' or project {namespace}/{name}:{tag} does not exist."
+            )
+        elif response.status_code == ResponseStatusCodes.CONFLICT:
+            raise ResponseError(f"Sample '{sample_name}' already exists in the view.")
+        else:
             raise ResponseError(
                 f"Unexpected return value. Error: {response.status_code}"
             )
@@ -187,7 +205,17 @@ class PEPHubView(RequestManager):
             url=url,
             headers=self.parse_header(self.__jwt_data),
         )
-        if response.status_code != ResponseStatusCodes.ACCEPTED:
+        if response.status_code == ResponseStatusCodes.ACCEPTED:
+            return None
+        elif response.status_code == ResponseStatusCodes.NOT_EXIST:
+            raise ResponseError(
+                f"Sample '{sample_name}' or project {namespace}/{name}:{tag} does not exist. "
+            )
+        elif response.status_code == ResponseStatusCodes.UNAUTHORIZED:
+            raise ResponseError(
+                f"You are unauthorized to remove this sample from the view."
+            )
+        else:
             raise ResponseError(
                 f"Unexpected return value. Error: {response.status_code}"
             )

@@ -4,10 +4,10 @@ import os
 
 from pydantic import BaseModel, field_validator
 
-PEPHUB_BASE_URL = os.getenv(
-    "PEPHUB_BASE_URL", default="https://pephub-api.databio.org/"
-)
-# PEPHUB_BASE_URL = "http://0.0.0.0:8000/"
+# PEPHUB_BASE_URL = os.getenv(
+#     "PEPHUB_BASE_URL", default="https://pephub-api.databio.org/"
+# )
+PEPHUB_BASE_URL = "http://0.0.0.0:8000/"
 PEPHUB_PEP_API_BASE_URL = f"{PEPHUB_BASE_URL}api/v1/projects/"
 PEPHUB_PEP_SEARCH_URL = f"{PEPHUB_BASE_URL}api/v1/namespaces/{{namespace}}/projects"
 PEPHUB_PUSH_URL = f"{PEPHUB_BASE_URL}api/v1/namespaces/{{namespace}}/projects/json"
@@ -16,9 +16,7 @@ PEPHUB_SAMPLE_URL = f"{PEPHUB_BASE_URL}api/v1/projects/{{namespace}}/{{project}}
 PEPHUB_VIEW_URL = (
     f"{PEPHUB_BASE_URL}api/v1/projects/{{namespace}}/{{project}}/views/{{view_name}}"
 )
-PEPHUB_VIEW_SAMPLE_URL = (
-    f"{PEPHUB_BASE_URL}api/v1/projects/{{namespace}}/{{project}}/views/{{view_name}}/{{sample_name}}"
-)
+PEPHUB_VIEW_SAMPLE_URL = f"{PEPHUB_BASE_URL}api/v1/projects/{{namespace}}/{{project}}/views/{{view_name}}/{{sample_name}}"
 
 
 class RegistryPath(BaseModel):

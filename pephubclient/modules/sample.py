@@ -42,7 +42,11 @@ class PEPHubSample(RequestManager):
         response = self.send_request(
             method="GET", url=url, headers=self.parse_header(self.__jwt_data)
         )
-        if response.status_code == ResponseStatusCodes.OK:
+        if response.status_code != ResponseStatusCodes.OK:
+            raise ResponseError(
+                f"Sample does not exist, or Internal server error occurred."
+            )
+        else:
             return self.decode_response(response, output_json=True)
 
     def create(
@@ -75,14 +79,27 @@ class PEPHubSample(RequestManager):
             pep_variables={"tag": tag, "overwrite": overwrite}
         )
 
+        # add sample name to sample_dict if it is not there
+        if sample_name not in sample_dict.values():
+            sample_dict["sample_name"] = sample_name
+
         response = self.send_request(
             method="POST",
             url=url,
             headers=self.parse_header(self.__jwt_data),
             json=sample_dict,
         )
-        if response.status_code == ResponseStatusCodes.OK:
+        if response.status_code == ResponseStatusCodes.ACCEPTED:
             return None
+
+        elif response.status_code == ResponseStatusCodes.NOT_EXIST:
+            raise ResponseError(
+                f"Project '{namespace}/{name}:{tag}' does not exist. Error: {response.status_code}"
+            )
+        elif response.status_code == ResponseStatusCodes.CONFLICT:
+            raise ResponseError(
+                f"Sample '{sample_name}' already exists. Set overwrite to True to overwrite sample."
+            )
         else:
             raise ResponseError(
                 f"Unexpected return value. Error: {response.status_code}"
@@ -119,8 +136,12 @@ class PEPHubSample(RequestManager):
             headers=self.parse_header(self.__jwt_data),
             json=sample_dict,
         )
-        if response.status_code == ResponseStatusCodes.OK:
+        if response.status_code == ResponseStatusCodes.ACCEPTED:
             return None
+        elif response.status_code == ResponseStatusCodes.NOT_EXIST:
+            raise ResponseError(
+                f"Sample '{sample_name}' or project {namespace}/{name}:{tag} does not exist. Error: {response.status_code}"
+            )
         else:
             raise ResponseError(
                 f"Unexpected return value. Error: {response.status_code}"
@@ -147,8 +168,12 @@ class PEPHubSample(RequestManager):
             url=url,
             headers=self.parse_header(self.__jwt_data),
         )
-        if response.status_code == ResponseStatusCodes.OK:
+        if response.status_code == ResponseStatusCodes.ACCEPTED:
             return None
+        elif response.status_code == ResponseStatusCodes.NOT_EXIST:
+            raise ResponseError(
+                f"Sample '{sample_name}' or project {namespace}/{name}:{tag} does not exist. Error: {response.status_code}"
+            )
         else:
             raise ResponseError(
                 f"Unexpected return value. Error: {response.status_code}"
