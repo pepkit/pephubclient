@@ -61,7 +61,7 @@ class TestSmoke:
             return_value=Mock(content="some return", status_code=200),
         )
         mocker.patch(
-            "pephubclient.pephubclient.PEPHubClient._handle_pephub_response",
+            "pephubclient.helpers.RequestManager.decode_response",
             return_value=test_raw_pep_return,
         )
         save_yaml_mock = mocker.patch(
@@ -150,10 +150,37 @@ class TestSmoke:
             )
 
     def test_search_prj(self, mocker):
-        return_value = b'{"count":1,"limit":100,"offset":0,"items":[{"namespace":"namespace1","name":"basic","tag":"default","is_private":false,"number_of_samples":2,"description":"None","last_update_date":"2023-08-27 19:07:31.552861+00:00","submission_date":"2023-08-27 19:07:31.552858+00:00","digest":"08cbcdbf4974fc84bee824c562b324b5","pep_schema":"random_schema_name"}],"session_info":null,"can_edit":false}'
+        return_value = {
+            "count": 1,
+            "limit": 100,
+            "offset": 0,
+            "items": [
+                {
+                    "namespace": "namespace1",
+                    "name": "basic",
+                    "tag": "default",
+                    "is_private": False,
+                    "number_of_samples": 2,
+                    "description": "None",
+                    "last_update_date": "2023-08-27 19:07:31.552861+00:00",
+                    "submission_date": "2023-08-27 19:07:31.552858+00:00",
+                    "digest": "08cbcdbf4974fc84bee824c562b324b5",
+                    "pep_schema": "random_schema_name",
+                    "pop": False,
+                    "stars_number": 0,
+                    "forked_from": None,
+                }
+            ],
+            "session_info": None,
+            "can_edit": False,
+        }
         mocker.patch(
             "requests.request",
             return_value=Mock(content=return_value, status_code=200),
+        )
+        mocker.patch(
+            "pephubclient.helpers.RequestManager.decode_response",
+            return_value=return_value,
         )
 
         return_value = PEPHubClient().find_project(namespace="namespace1")
@@ -202,37 +229,384 @@ class TestHelpers:
     def test_is_registry_path(self, input_str, expected_output):
         assert is_registry_path(input_str) is expected_output
 
-    @pytest.mark.skipif(True, reason="not implemented yet")
-    def test_save_zip_pep(self):
-        ...
 
-    @pytest.mark.skipif(True, reason="not implemented yet")
-    def test_save_unzip_pep(self):
-        ...
+class TestSamples:
+
+    def test_get(self, mocker):
+        return_value = {
+            "genome": "phc_test1",
+            "sample_type": "phc_test",
+            "sample_name": "gg1",
+        }
+        mocker.patch(
+            "requests.request",
+            return_value=Mock(content=return_value, status_code=200),
+        )
+        mocker.patch(
+            "pephubclient.helpers.RequestManager.decode_response",
+            return_value=return_value,
+        )
+        return_value = PEPHubClient().sample.get(
+            "test_namespace",
+            "taest_name",
+            "default",
+            "gg1",
+        )
+        assert return_value == return_value
+
+    @pytest.mark.parametrize(
+        "status_code, expected_error_message",
+        [
+            (
+                404,
+                "Sample does not exist.",
+            ),
+            (
+                500,
+                "Internal server error. Unexpected return value.",
+            ),
+            (
+                403,
+                "Unexpected return value. Error: 403",
+            ),
+        ],
+    )
+    def test_sample_get_with_pephub_error_response(
+        self, mocker, status_code, expected_error_message
+    ):
+        mocker.patch("requests.request", return_value=Mock(status_code=status_code))
+        with pytest.raises(ResponseError, match=expected_error_message):
+            PEPHubClient().sample.get(
+                "test_namespace",
+                "taest_name",
+                "default",
+                "gg1",
+            )
+
+    @pytest.mark.parametrize(
+        "prj_dict",
+        [
+            {"genome": "phc_test1", "sample_type": "phc_test", "sample_name": "gg1"},
+            {"genome": "phc_test1", "sample_type": "phc_test"},
+        ],
+    )
+    def test_create(self, mocker, prj_dict):
+        return_value = prj_dict
+        mocker_obj = mocker.patch(
+            "requests.request",
+            return_value=Mock(content=return_value, status_code=202),
+        )
+
+        PEPHubClient().sample.create(
+            "test_namespace",
+            "taest_name",
+            "default",
+            "gg1",
+            sample_dict=return_value,
+        )
+        assert mocker_obj.called
+
+    @pytest.mark.parametrize(
+        "status_code, expected_error_message",
+        [
+            (
+                404,
+                "does not exist.",
+            ),
+            (
+                409,
+                "already exists. Set overwrite to True to overwrite sample.",
+            ),
+            (
+                500,
+                "Unexpected return value.",
+            ),
+        ],
+    )
+    def test_sample_create_with_pephub_error_response(
+        self, mocker, status_code, expected_error_message
+    ):
+        mocker.patch("requests.request", return_value=Mock(status_code=status_code))
+        with pytest.raises(ResponseError, match=expected_error_message):
+            PEPHubClient().sample.create(
+                "test_namespace",
+                "taest_name",
+                "default",
+                "gg1",
+                sample_dict={
+                    "genome": "phc_test1",
+                    "sample_type": "phc_test",
+                    "sample_name": "gg1",
+                },
+            )
+
+    def test_delete(self, mocker):
+        mocker_obj = mocker.patch(
+            "requests.request",
+            return_value=Mock(status_code=202),
+        )
+
+        PEPHubClient().sample.remove(
+            "test_namespace",
+            "taest_name",
+            "default",
+            "gg1",
+        )
+        assert mocker_obj.called
+
+    @pytest.mark.parametrize(
+        "status_code, expected_error_message",
+        [
+            (
+                404,
+                "does not exist.",
+            ),
+            (
+                500,
+                "Unexpected return value.",
+            ),
+        ],
+    )
+    def test_sample_delete_with_pephub_error_response(
+        self, mocker, status_code, expected_error_message
+    ):
+        mocker.patch("requests.request", return_value=Mock(status_code=status_code))
+        with pytest.raises(ResponseError, match=expected_error_message):
+            PEPHubClient().sample.remove(
+                "test_namespace",
+                "taest_name",
+                "default",
+                "gg1",
+            )
+
+    def test_update(self, mocker):
+        mocker_obj = mocker.patch(
+            "requests.request",
+            return_value=Mock(status_code=202),
+        )
+
+        PEPHubClient().sample.update(
+            "test_namespace",
+            "taest_name",
+            "default",
+            "gg1",
+            sample_dict={
+                "genome": "phc_test1",
+                "sample_type": "phc_test",
+                "new_col": "column",
+            },
+        )
+        assert mocker_obj.called
+
+    @pytest.mark.parametrize(
+        "status_code, expected_error_message",
+        [
+            (
+                404,
+                "does not exist.",
+            ),
+            (
+                500,
+                "Unexpected return value.",
+            ),
+        ],
+    )
+    def test_sample_update_with_pephub_error_response(
+        self, mocker, status_code, expected_error_message
+    ):
+        mocker.patch("requests.request", return_value=Mock(status_code=status_code))
+        with pytest.raises(ResponseError, match=expected_error_message):
+            PEPHubClient().sample.update(
+                "test_namespace",
+                "taest_name",
+                "default",
+                "gg1",
+                sample_dict={
+                    "genome": "phc_test1",
+                    "sample_type": "phc_test",
+                    "new_col": "column",
+                },
+            )
 
 
-@pytest.mark.skipif(True, reason="not implemented yet")
-class TestSamplesModification:
-    def test_get_sumple(self):
-        ...
+class TestViews:
+    def test_get(self, mocker, test_raw_pep_return):
+        return_value = test_raw_pep_return
+        mocker.patch(
+            "requests.request",
+            return_value=Mock(content=return_value, status_code=200),
+        )
+        mocker.patch(
+            "pephubclient.helpers.RequestManager.decode_response",
+            return_value=return_value,
+        )
 
-    def test_add_sample(self):
-        ...
+        return_value = PEPHubClient().view.get(
+            "test_namespace",
+            "taest_name",
+            "default",
+            "gg1",
+        )
+        assert return_value == return_value
 
-    def test_remove_sample(self):
-        ...
+    @pytest.mark.parametrize(
+        "status_code, expected_error_message",
+        [
+            (
+                404,
+                "does not exist.",
+            ),
+            (
+                500,
+                "Internal server error.",
+            ),
+        ],
+    )
+    def test_view_get_with_pephub_error_response(
+        self, mocker, status_code, expected_error_message
+    ):
+        mocker.patch("requests.request", return_value=Mock(status_code=status_code))
+        with pytest.raises(ResponseError, match=expected_error_message):
+            PEPHubClient().view.get(
+                "test_namespace",
+                "taest_name",
+                "default",
+                "gg1",
+            )
 
-    def test_update_sample(self):
-        ...
+    def test_create(self, mocker):
+        mocker_obj = mocker.patch(
+            "requests.request",
+            return_value=Mock(status_code=202),
+        )
+
+        PEPHubClient().view.create(
+            "test_namespace",
+            "taest_name",
+            "default",
+            "gg1",
+            sample_list=["sample1", "sample2"],
+        )
+        assert mocker_obj.called
+
+    @pytest.mark.parametrize(
+        "status_code, expected_error_message",
+        [
+            (
+                404,
+                "does not exist.",
+            ),
+            (
+                409,
+                "already exists in the project.",
+            ),
+        ],
+    )
+    def test_view_create_with_pephub_error_response(
+        self, mocker, status_code, expected_error_message
+    ):
+        mocker.patch("requests.request", return_value=Mock(status_code=status_code))
+        with pytest.raises(ResponseError, match=expected_error_message):
+            PEPHubClient().view.create(
+                "test_namespace",
+                "taest_name",
+                "default",
+                "gg1",
+                sample_list=["sample1", "sample2"],
+            )
+
+    def test_delete(self, mocker):
+        mocker_obj = mocker.patch(
+            "requests.request",
+            return_value=Mock(status_code=202),
+        )
+
+        PEPHubClient().view.delete(
+            "test_namespace",
+            "taest_name",
+            "default",
+            "gg1",
+        )
+        assert mocker_obj.called
+
+    @pytest.mark.parametrize(
+        "status_code, expected_error_message",
+        [
+            (
+                404,
+                "does not exist.",
+            ),
+            (
+                401,
+                "You are unauthorized to delete this view.",
+            ),
+        ],
+    )
+    def test_view_delete_with_pephub_error_response(
+        self, mocker, status_code, expected_error_message
+    ):
+        mocker.patch("requests.request", return_value=Mock(status_code=status_code))
+        with pytest.raises(ResponseError, match=expected_error_message):
+            PEPHubClient().view.delete(
+                "test_namespace",
+                "taest_name",
+                "default",
+                "gg1",
+            )
+
+    def test_add_sample(self, mocker):
+        mocker_obj = mocker.patch(
+            "requests.request",
+            return_value=Mock(status_code=202),
+        )
+
+        PEPHubClient().view.add_sample(
+            "test_namespace",
+            "taest_name",
+            "default",
+            "gg1",
+            "sample1",
+        )
+        assert mocker_obj.called
+
+    def test_delete_sample(self, mocker):
+        mocker_obj = mocker.patch(
+            "requests.request",
+            return_value=Mock(status_code=202),
+        )
+
+        PEPHubClient().view.remove_sample(
+            "test_namespace",
+            "taest_name",
+            "default",
+            "gg1",
+            "sample1",
+        )
+        assert mocker_obj.called
 
 
-@pytest.mark.skipif(True, reason="not implemented yet")
-class TestProjectVeiw:
-    def test_get_view(self):
-        ...
+###
 
-    def test_create_view(self):
-        ...
 
-    def test_delete_view(self):
-        ...
+# test add sample:
+# 1. add correct 202
+# 2. add existing 409
+# 3. add with sample_name
+# 4. add without sample_name
+# 5. add with overwrite
+# 6. add to unexisting project 404
+
+# delete sample:
+# 1. delete existing 202
+# 2. delete unexisting 404
+
+# get sample:
+# 1. get existing 200
+# 2. get unexisting 404
+# 3. get with raw 200
+# 4. get from unexisting project 404
+
+# update sample:
+# 1. update existing 202
+# 2. update unexisting sample 404
+# 3. update unexisting project 404

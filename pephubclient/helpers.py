@@ -16,6 +16,7 @@ from peppy.const import (
 
 import requests
 from requests.exceptions import ConnectionError
+from urllib.parse import urlencode
 
 from ubiquerg import parse_registry_path
 from pydantic import ValidationError
@@ -47,19 +48,49 @@ class RequestManager:
         )
 
     @staticmethod
-    def decode_response(response: requests.Response, encoding: str = "utf-8") -> str:
+    def decode_response(
+        response: requests.Response, encoding: str = "utf-8", output_json: bool = False
+    ) -> Union[str, dict]:
         """
         Decode the response from GitHub and pack the returned data into appropriate model.
 
         :param response: Response from GitHub.
         :param encoding: Response encoding [Default: utf-8]
+        :param output_json: If True, return response in json format
         :return: Response data as an instance of correct model.
         """
 
         try:
-            return response.content.decode(encoding)
+            if output_json:
+                return response.json()
+            else:
+                return response.content.decode(encoding)
         except json.JSONDecodeError as err:
             raise ResponseError(f"Error in response encoding format: {err}")
+
+    @staticmethod
+    def parse_query_param(pep_variables: dict) -> str:
+        """
+        Grab all the variables passed by user (if any) and parse them to match the format specified
+        by PEPhub API for query parameters.
+
+        :param pep_variables: dict of query parameters
+        :return: PEPHubClient variables transformed into string in correct format.
+        """
+        return "?" + urlencode(pep_variables)
+
+    @staticmethod
+    def parse_header(jwt_data: Optional[str] = None) -> dict:
+        """
+        Create Authorization header
+
+        :param jwt_data: jwt string
+        :return: Authorization dict
+        """
+        if jwt_data:
+            return {"Authorization": jwt_data}
+        else:
+            return {}
 
 
 class MessageHandler:
