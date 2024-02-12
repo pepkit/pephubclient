@@ -49,7 +49,9 @@ class PEPHubSample(RequestManager):
         if response.status_code == ResponseStatusCodes.OK:
             return self.decode_response(response, output_json=True)
         if response.status_code == ResponseStatusCodes.NOT_EXIST:
-            raise ResponseError("Sample does not exist.")
+            raise ResponseError(
+                f"Sample does not exist. Project: '{namespace}/{name}:{tag}'. Sample_name: '{sample_name}'"
+            )
         elif response.status_code == ResponseStatusCodes.INTERNAL_ERROR:
             raise ResponseError("Internal server error. Unexpected return value.")
         else:

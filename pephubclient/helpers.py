@@ -16,6 +16,7 @@ from peppy.const import (
 
 import requests
 from requests.exceptions import ConnectionError
+from urllib.parse import urlencode
 
 from ubiquerg import parse_registry_path
 from pydantic import ValidationError
@@ -76,11 +77,7 @@ class RequestManager:
         :param pep_variables: dict of query parameters
         :return: PEPHubClient variables transformed into string in correct format.
         """
-        parsed_variables = []
-
-        for variable_name, variable_value in pep_variables.items():
-            parsed_variables.append(f"{variable_name}={variable_value}")
-        return "?" + "&".join(parsed_variables)
+        return "?" + urlencode(pep_variables)
 
     @staticmethod
     def parse_header(jwt_data: Optional[str] = None) -> dict:
