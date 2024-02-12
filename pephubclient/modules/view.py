@@ -1,5 +1,6 @@
 from typing import Union
 import peppy
+import logging
 
 from pephubclient.helpers import RequestManager
 from pephubclient.constants import (
@@ -9,6 +10,8 @@ from pephubclient.constants import (
 )
 from pephubclient.exceptions import ResponseError
 from pephubclient.models import ProjectDict
+
+_LOGGER = logging.getLogger("pephubclient")
 
 
 class PEPHubView(RequestManager):
@@ -92,6 +95,9 @@ class PEPHubView(RequestManager):
             json=sample_list,
         )
         if response.status_code == ResponseStatusCodes.ACCEPTED:
+            _LOGGER.info(
+                f"View '{view_name}' created in project '{namespace}/{name}:{tag}' successfully."
+            )
             return None
         elif response.status_code == ResponseStatusCodes.NOT_EXIST:
             raise ResponseError(
@@ -123,6 +129,9 @@ class PEPHubView(RequestManager):
         )
 
         if response.status_code == ResponseStatusCodes.ACCEPTED:
+            _LOGGER.info(
+                f"View '{view_name}' deleted from project '{namespace}/{name}:{tag}' successfully."
+            )
             return None
         elif response.status_code == ResponseStatusCodes.NOT_EXIST:
             raise ResponseError("View does not exists, or you are unauthorized.")
@@ -163,6 +172,9 @@ class PEPHubView(RequestManager):
             headers=self.parse_header(self.__jwt_data),
         )
         if response.status_code == ResponseStatusCodes.ACCEPTED:
+            _LOGGER.info(
+                f"Sample '{sample_name}' added to view '{view_name}' in project '{namespace}/{name}:{tag}' successfully."
+            )
             return None
         elif response.status_code == ResponseStatusCodes.NOT_EXIST:
             raise ResponseError(
@@ -208,6 +220,9 @@ class PEPHubView(RequestManager):
             headers=self.parse_header(self.__jwt_data),
         )
         if response.status_code == ResponseStatusCodes.ACCEPTED:
+            _LOGGER.info(
+                f"Sample '{sample_name}' removed from view '{view_name}' in project '{namespace}/{name}:{tag}' successfully."
+            )
             return None
         elif response.status_code == ResponseStatusCodes.NOT_EXIST:
             raise ResponseError(

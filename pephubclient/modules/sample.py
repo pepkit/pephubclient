@@ -1,6 +1,10 @@
+import logging
+
 from pephubclient.helpers import RequestManager
 from pephubclient.constants import PEPHUB_SAMPLE_URL, ResponseStatusCodes
 from pephubclient.exceptions import ResponseError
+
+_LOGGER = logging.getLogger("pephubclient")
 
 
 class PEPHubSample(RequestManager):
@@ -94,8 +98,10 @@ class PEPHubSample(RequestManager):
             json=sample_dict,
         )
         if response.status_code == ResponseStatusCodes.ACCEPTED:
+            _LOGGER.info(
+                f"Sample '{sample_name}' added to project '{namespace}/{name}:{tag}' successfully."
+            )
             return None
-
         elif response.status_code == ResponseStatusCodes.NOT_EXIST:
             raise ResponseError(f"Project '{namespace}/{name}:{tag}' does not exist.")
         elif response.status_code == ResponseStatusCodes.CONFLICT:
@@ -139,6 +145,9 @@ class PEPHubSample(RequestManager):
             json=sample_dict,
         )
         if response.status_code == ResponseStatusCodes.ACCEPTED:
+            _LOGGER.info(
+                f"Sample '{sample_name}' updated in project '{namespace}/{name}:{tag}' successfully."
+            )
             return None
         elif response.status_code == ResponseStatusCodes.NOT_EXIST:
             raise ResponseError(
@@ -171,6 +180,9 @@ class PEPHubSample(RequestManager):
             headers=self.parse_header(self.__jwt_data),
         )
         if response.status_code == ResponseStatusCodes.ACCEPTED:
+            _LOGGER.info(
+                f"Sample '{sample_name}' removed from project '{namespace}/{name}:{tag}' successfully."
+            )
             return None
         elif response.status_code == ResponseStatusCodes.NOT_EXIST:
             raise ResponseError(
