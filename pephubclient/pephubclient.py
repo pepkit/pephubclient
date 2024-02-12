@@ -1,10 +1,8 @@
-import json
 from typing import NoReturn, Optional, Literal
 from typing_extensions import deprecated
 
 import peppy
 from peppy.const import NAME_KEY
-import requests
 import urllib3
 from pydantic import ValidationError
 from ubiquerg import parse_registry_path
@@ -107,7 +105,6 @@ class PEPHubClient(RequestManager):
         :param query_param: query parameters used in get request
         :return Project: peppy project.
         """
-        jwt = FilesManager.load_jwt_data_from_file(PATH_TO_FILE_WITH_JWT)
         raw_pep = self.load_raw_pep(project_registry_path, query_param)
         peppy_project = peppy.Project().from_dict(raw_pep)
         return peppy_project
@@ -250,11 +247,11 @@ class PEPHubClient(RequestManager):
             cookies=None,
         )
         if pephub_response.status_code == ResponseStatusCodes.OK:
-            decoded_response = self._handle_pephub_response(pephub_response)
+            decoded_response = self.decode_response(pephub_response, output_json=True)
             project_list = []
-            for project_found in json.loads(decoded_response)["items"]:
+            for project_found in decoded_response["items"]:
                 project_list.append(ProjectAnnotationModel(**project_found))
-            return SearchReturnModel(**json.loads(decoded_response))
+            return SearchReturnModel(**decoded_response)
 
     @deprecated("This method is deprecated. Use load_raw_pep instead.")
     def _load_raw_pep(
@@ -297,8 +294,8 @@ class PEPHubClient(RequestManager):
             cookies=None,
         )
         if pephub_response.status_code == ResponseStatusCodes.OK:
-            decoded_response = self._handle_pephub_response(pephub_response)
-            correct_proj_dict = ProjectDict(**json.loads(decoded_response))
+            decoded_response = self.decode_response(pephub_response, output_json=True)
+            correct_proj_dict = ProjectDict(**decoded_response)
 
             # This step is necessary because of this issue: https://github.com/pepkit/pephub/issues/124
             return correct_proj_dict.model_dump(by_alias=True)
@@ -362,15 +359,3 @@ class PEPHubClient(RequestManager):
         :return: url string
         """
         return PEPHUB_PUSH_URL.format(namespace=namespace)
-
-    @staticmethod
-    def _handle_pephub_response(pephub_response: requests.Response):
-        """
-        Check pephub response
-        """
-        decoded_response = PEPHubClient.decode_response(pephub_response)
-
-        if pephub_response.status_code != ResponseStatusCodes.OK:
-            raise ResponseError(message=json.loads(decoded_response).get("detail"))
-
-        return decoded_response

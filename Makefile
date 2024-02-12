@@ -5,7 +5,7 @@ run-coverage:
 	coverage run -m pytest
 
 html-report:
-	coverage html
+	coverage html --omit="*/test*"
 
 open-coverage:
 	cd htmlcov && google-chrome index.html

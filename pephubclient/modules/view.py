@@ -8,6 +8,7 @@ from pephubclient.constants import (
     ResponseStatusCodes,
 )
 from pephubclient.exceptions import ResponseError
+from pephubclient.models import ProjectDict
 
 
 class PEPHubView(RequestManager):
@@ -52,6 +53,7 @@ class PEPHubView(RequestManager):
             output = self.decode_response(response, output_json=True)
             if raw:
                 return output
+            output = ProjectDict(**output).model_dump(by_alias=True)
             return peppy.Project.from_dict(output)
         elif response.status_code == ResponseStatusCodes.NOT_EXIST:
             raise ResponseError("View does not exist, or you are unauthorized.")
@@ -213,7 +215,7 @@ class PEPHubView(RequestManager):
             )
         elif response.status_code == ResponseStatusCodes.UNAUTHORIZED:
             raise ResponseError(
-                f"You are unauthorized to remove this sample from the view."
+                "You are unauthorized to remove this sample from the view."
             )
         else:
             raise ResponseError(

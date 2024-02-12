@@ -6,7 +6,6 @@ import pandas
 import yaml
 import zipfile
 
-from pephubclient.constants import RegistryPath
 from pephubclient.exceptions import PEPExistsError
 
 

@@ -1,5 +1,3 @@
-import json
-
 import pytest
 
 from pephubclient.pephub_oauth.models import InitializeDeviceCodeResponse
@@ -29,7 +27,7 @@ def test_raw_pep_return():
             {"time": "0", "file_path": "source1", "sample_name": "frog_0h"},
         ],
     }
-    return json.dumps(sample_prj)
+    return sample_prj
 
 
 @pytest.fixture

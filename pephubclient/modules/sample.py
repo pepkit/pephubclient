@@ -42,12 +42,16 @@ class PEPHubSample(RequestManager):
         response = self.send_request(
             method="GET", url=url, headers=self.parse_header(self.__jwt_data)
         )
-        if response.status_code != ResponseStatusCodes.OK:
-            raise ResponseError(
-                f"Sample does not exist, or Internal server error occurred."
-            )
-        else:
+        if response.status_code == ResponseStatusCodes.OK:
             return self.decode_response(response, output_json=True)
+        if response.status_code == ResponseStatusCodes.NOT_EXIST:
+            raise ResponseError("Sample does not exist.")
+        elif response.status_code == ResponseStatusCodes.INTERNAL_ERROR:
+            raise ResponseError("Internal server error. Unexpected return value.")
+        else:
+            raise ResponseError(
+                f"Unexpected return value. Error: {response.status_code}"
+            )
 
     def create(
         self,
@@ -93,9 +97,7 @@ class PEPHubSample(RequestManager):
             return None
 
         elif response.status_code == ResponseStatusCodes.NOT_EXIST:
-            raise ResponseError(
-                f"Project '{namespace}/{name}:{tag}' does not exist. Error: {response.status_code}"
-            )
+            raise ResponseError(f"Project '{namespace}/{name}:{tag}' does not exist.")
         elif response.status_code == ResponseStatusCodes.CONFLICT:
             raise ResponseError(
                 f"Sample '{sample_name}' already exists. Set overwrite to True to overwrite sample."
