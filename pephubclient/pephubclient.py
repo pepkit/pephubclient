@@ -1,17 +1,8 @@
-import json
-import os
 from typing import NoReturn, Optional, Literal
+from typing_extensions import deprecated
 
-import pandas as pd
 import peppy
-from peppy.const import (
-    NAME_KEY,
-    DESC_KEY,
-    CONFIG_KEY,
-    SUBSAMPLE_RAW_LIST_KEY,
-    SAMPLE_RAW_DICT_KEY,
-)
-import requests
+from peppy.const import NAME_KEY
 import urllib3
 from pydantic import ValidationError
 from ubiquerg import parse_registry_path
@@ -22,14 +13,14 @@ from pephubclient.constants import (
     RegistryPath,
     ResponseStatusCodes,
     PEPHUB_PEP_SEARCH_URL,
+    PATH_TO_FILE_WITH_JWT,
 )
 from pephubclient.exceptions import (
     IncorrectQueryStringError,
-    PEPExistsError,
     ResponseError,
 )
 from pephubclient.files_manager import FilesManager
-from pephubclient.helpers import MessageHandler, RequestManager
+from pephubclient.helpers import MessageHandler, RequestManager, save_pep
 from pephubclient.models import (
     ProjectDict,
     ProjectUploadData,
@@ -37,21 +28,26 @@ from pephubclient.models import (
     ProjectAnnotationModel,
 )
 from pephubclient.pephub_oauth.pephub_oauth import PEPHubAuth
+from pephubclient.modules.view import PEPHubView
+from pephubclient.modules.sample import PEPHubSample
 
 urllib3.disable_warnings()
 
 
 class PEPHubClient(RequestManager):
-    USER_DATA_FILE_NAME = "jwt.txt"
-    home_path = os.getenv("HOME")
-    if not home_path:
-        home_path = os.path.expanduser("~")
-    PATH_TO_FILE_WITH_JWT = (
-        os.path.join(home_path, ".pephubclient/") + USER_DATA_FILE_NAME
-    )
-
     def __init__(self):
-        self.registry_path = None
+        self.__jwt_data = FilesManager.load_jwt_data_from_file(PATH_TO_FILE_WITH_JWT)
+
+        self.__view = PEPHubView(self.__jwt_data)
+        self.__sample = PEPHubSample(self.__jwt_data)
+
+    @property
+    def view(self) -> PEPHubView:
+        return self.__view
+
+    @property
+    def sample(self) -> PEPHubSample:
+        return self.__sample
 
     def login(self) -> NoReturn:
         """
@@ -59,29 +55,42 @@ class PEPHubClient(RequestManager):
         """
         user_token = PEPHubAuth().login_to_pephub()
 
-        FilesManager.save_jwt_data_to_file(self.PATH_TO_FILE_WITH_JWT, user_token)
+        FilesManager.save_jwt_data_to_file(PATH_TO_FILE_WITH_JWT, user_token)
+        self.__jwt_data = FilesManager.load_jwt_data_from_file(PATH_TO_FILE_WITH_JWT)
 
     def logout(self) -> NoReturn:
         """
         Log out from PEPhub
         """
-        FilesManager.delete_file_if_exists(self.PATH_TO_FILE_WITH_JWT)
+        FilesManager.delete_file_if_exists(PATH_TO_FILE_WITH_JWT)
+        self.__jwt_data = None
 
-    def pull(self, project_registry_path: str, force: Optional[bool] = False) -> None:
+    def pull(
+        self,
+        project_registry_path: str,
+        force: Optional[bool] = False,
+        zip: Optional[bool] = False,
+        output: Optional[str] = None,
+    ) -> None:
         """
         Download project locally
 
         :param str project_registry_path: Project registry path in PEPhub (e.g. databio/base:default)
         :param bool force: if project exists, overwrite it.
+        :param bool zip: if True, save project as zip file
+        :param str output: path where project will be saved
         :return: None
         """
-        jwt_data = FilesManager.load_jwt_data_from_file(self.PATH_TO_FILE_WITH_JWT)
-        project_dict = self._load_raw_pep(
-            registry_path=project_registry_path, jwt_data=jwt_data
+        project_dict = self.load_raw_pep(
+            registry_path=project_registry_path,
         )
 
-        self._save_raw_pep(
-            reg_path=project_registry_path, project_dict=project_dict, force=force
+        save_pep(
+            project=project_dict,
+            reg_path=project_registry_path,
+            force=force,
+            project_path=output,
+            zip=zip,
         )
 
     def load_project(
@@ -96,8 +105,7 @@ class PEPHubClient(RequestManager):
         :param query_param: query parameters used in get request
         :return Project: peppy project.
         """
-        jwt = FilesManager.load_jwt_data_from_file(self.PATH_TO_FILE_WITH_JWT)
-        raw_pep = self._load_raw_pep(project_registry_path, jwt, query_param)
+        raw_pep = self.load_raw_pep(project_registry_path, query_param)
         peppy_project = peppy.Project().from_dict(raw_pep)
         return peppy_project
 
@@ -153,7 +161,6 @@ class PEPHubClient(RequestManager):
         :param force: overwrite project if it exists
         :return: None
         """
-        jwt_data = FilesManager.load_jwt_data_from_file(self.PATH_TO_FILE_WITH_JWT)
         if name:
             project[NAME_KEY] = name
 
@@ -169,7 +176,7 @@ class PEPHubClient(RequestManager):
         pephub_response = self.send_request(
             method="POST",
             url=self._build_push_request_url(namespace=namespace),
-            headers=self._get_header(jwt_data),
+            headers=self.parse_header(self.__jwt_data),
             json=upload_data.model_dump(),
             cookies=None,
         )
@@ -215,7 +222,6 @@ class PEPHubClient(RequestManager):
         :param end_date: filter end date (if none today's date is used)
         :return:
         """
-        jwt_data = FilesManager.load_jwt_data_from_file(self.PATH_TO_FILE_WITH_JWT)
 
         query_param = {
             "q": query_string,
@@ -236,100 +242,47 @@ class PEPHubClient(RequestManager):
         pephub_response = self.send_request(
             method="GET",
             url=url,
-            headers=self._get_header(jwt_data),
+            headers=self.parse_header(self.__jwt_data),
             json=None,
             cookies=None,
         )
         if pephub_response.status_code == ResponseStatusCodes.OK:
-            decoded_response = self._handle_pephub_response(pephub_response)
+            decoded_response = self.decode_response(pephub_response, output_json=True)
             project_list = []
-            for project_found in json.loads(decoded_response)["items"]:
+            for project_found in decoded_response["items"]:
                 project_list.append(ProjectAnnotationModel(**project_found))
-            return SearchReturnModel(**json.loads(decoded_response))
+            return SearchReturnModel(**decoded_response)
 
-    @staticmethod
-    def _save_raw_pep(
-        reg_path: str,
-        project_dict: dict,
-        force: bool = False,
-    ) -> None:
-        """
-        Save project locally.
-
-        :param dict project_dict: PEP dictionary (raw project)
-        :param bool force: overwrite project if exists
-        :return: None
-        """
-        reg_path_model = RegistryPath(**parse_registry_path(reg_path))
-        folder_path = FilesManager.create_project_folder(registry_path=reg_path_model)
-
-        def full_path(fn: str) -> str:
-            return os.path.join(folder_path, fn)
-
-        project_name = project_dict[CONFIG_KEY][NAME_KEY]
-        sample_table_filename = "sample_table.csv"
-        yaml_full_path = full_path(f"{project_name}_config.yaml")
-        sample_full_path = full_path(sample_table_filename)
-        if not force:
-            extant = [
-                p for p in [yaml_full_path, sample_full_path] if os.path.isfile(p)
-            ]
-            if extant:
-                raise PEPExistsError(
-                    f"{len(extant)} file(s) exist(s): {', '.join(extant)}"
-                )
-
-        config_dict = project_dict.get(CONFIG_KEY)
-        config_dict[NAME_KEY] = project_name
-        config_dict[DESC_KEY] = project_dict[CONFIG_KEY][DESC_KEY]
-        config_dict["sample_table"] = sample_table_filename
-
-        sample_pandas = pd.DataFrame(project_dict.get(SAMPLE_RAW_DICT_KEY, {}))
-
-        subsample_list = [
-            pd.DataFrame(sub_a)
-            for sub_a in project_dict.get(SUBSAMPLE_RAW_LIST_KEY) or []
-        ]
-
-        filenames = []
-        for idx, subsample in enumerate(subsample_list):
-            fn = f"subsample_table{idx + 1}.csv"
-            filenames.append(fn)
-            FilesManager.save_pandas(subsample, full_path(fn), not_force=False)
-        config_dict["subsample_table"] = filenames
-
-        FilesManager.save_yaml(config_dict, yaml_full_path, not_force=False)
-        FilesManager.save_pandas(sample_pandas, sample_full_path, not_force=False)
-
-        if config_dict.get("subsample_table"):
-            for number, subsample in enumerate(subsample_list):
-                FilesManager.save_pandas(
-                    subsample,
-                    os.path.join(folder_path, config_dict["subsample_table"][number]),
-                    not_force=False,
-                )
-
-        MessageHandler.print_success(
-            f"Project was downloaded successfully -> {folder_path}"
-        )
-        return None
-
+    @deprecated("This method is deprecated. Use load_raw_pep instead.")
     def _load_raw_pep(
         self,
         registry_path: str,
         jwt_data: Optional[str] = None,
         query_param: Optional[dict] = None,
     ) -> dict:
-        """project_name
+        """
+        !!! This method is deprecated. Use load_raw_pep instead. !!!
+
         Request PEPhub and return the requested project as peppy.Project object.
 
         :param registry_path: Project namespace, eg. "geo/GSE124224:tag"
         :param query_param: Optional variables to be passed to PEPhub
-        :param jwt_data: JWT token.
         :return: Raw project in dict.
         """
-        if not jwt_data:
-            jwt_data = FilesManager.load_jwt_data_from_file(self.PATH_TO_FILE_WITH_JWT)
+        return self.load_raw_pep(registry_path, query_param)
+
+    def load_raw_pep(
+        self,
+        registry_path: str,
+        query_param: Optional[dict] = None,
+    ) -> dict:
+        """
+        Request PEPhub and return the requested project as peppy.Project object.
+
+        :param registry_path: Project namespace, eg. "geo/GSE124224:tag"
+        :param query_param: Optional variables to be passed to PEPhub
+        :return: Raw project in dict.
+        """
         query_param = query_param or {}
         query_param["raw"] = "true"
 
@@ -337,12 +290,12 @@ class PEPHubClient(RequestManager):
         pephub_response = self.send_request(
             method="GET",
             url=self._build_pull_request_url(query_param=query_param),
-            headers=self._get_header(jwt_data),
+            headers=self.parse_header(self.__jwt_data),
             cookies=None,
         )
         if pephub_response.status_code == ResponseStatusCodes.OK:
-            decoded_response = self._handle_pephub_response(pephub_response)
-            correct_proj_dict = ProjectDict(**json.loads(decoded_response))
+            decoded_response = self.decode_response(pephub_response, output_json=True)
+            correct_proj_dict = ProjectDict(**decoded_response)
 
             # This step is necessary because of this issue: https://github.com/pepkit/pephub/issues/124
             return correct_proj_dict.model_dump(by_alias=True)
@@ -366,19 +319,6 @@ class PEPHubClient(RequestManager):
         except (ValidationError, TypeError):
             raise IncorrectQueryStringError(query_string=query_string)
 
-    @staticmethod
-    def _get_header(jwt_data: Optional[str] = None) -> dict:
-        """
-        Create Authorization header
-
-        :param jwt_data: jwt string
-        :return: Authorization dict
-        """
-        if jwt_data:
-            return {"Authorization": jwt_data}
-        else:
-            return {}
-
     def _build_pull_request_url(self, query_param: dict = None) -> str:
         """
         Build request for getting projects form pephub
@@ -391,14 +331,13 @@ class PEPHubClient(RequestManager):
 
         endpoint = self.registry_path.namespace + "/" + self.registry_path.item
 
-        variables_string = PEPHubClient._parse_query_param(query_param)
+        variables_string = self.parse_query_param(query_param)
         endpoint += variables_string
 
         return PEPHUB_PEP_API_BASE_URL + endpoint
 
-    def _build_project_search_url(
-        self, namespace: str, query_param: dict = None
-    ) -> str:
+    @staticmethod
+    def _build_project_search_url(namespace: str, query_param: dict = None) -> str:
         """
         Build request for searching projects form pephub
 
@@ -406,7 +345,7 @@ class PEPHubClient(RequestManager):
         :return: url string
         """
 
-        variables_string = PEPHubClient._parse_query_param(query_param)
+        variables_string = RequestManager.parse_query_param(query_param)
         endpoint = variables_string
 
         return PEPHUB_PEP_SEARCH_URL.format(namespace=namespace) + endpoint
@@ -420,30 +359,3 @@ class PEPHubClient(RequestManager):
         :return: url string
         """
         return PEPHUB_PUSH_URL.format(namespace=namespace)
-
-    @staticmethod
-    def _parse_query_param(pep_variables: dict) -> str:
-        """
-        Grab all the variables passed by user (if any) and parse them to match the format specified
-        by PEPhub API for query parameters.
-
-        :param pep_variables: dict of query parameters
-        :return: PEPHubClient variables transformed into string in correct format.
-        """
-        parsed_variables = []
-
-        for variable_name, variable_value in pep_variables.items():
-            parsed_variables.append(f"{variable_name}={variable_value}")
-        return "?" + "&".join(parsed_variables)
-
-    @staticmethod
-    def _handle_pephub_response(pephub_response: requests.Response):
-        """
-        Check pephub response
-        """
-        decoded_response = PEPHubClient.decode_response(pephub_response)
-
-        if pephub_response.status_code != ResponseStatusCodes.OK:
-            raise ResponseError(message=json.loads(decoded_response).get("detail"))
-
-        return decoded_response

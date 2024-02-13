@@ -43,6 +43,7 @@ setup(
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "Topic :: Scientific/Engineering :: Bio-Informatics",
     ],
     keywords="project, bioinformatics, metadata",
@@ -58,7 +59,7 @@ setup(
     scripts=None,
     include_package_data=True,
     test_suite="tests",
-    tests_require=read_reqs("dev"),
+    tests_require=read_reqs("test"),
     setup_requires=(
         ["pytest-runner"] if {"test", "pytest", "ptr"} & set(sys.argv) else []
     ),

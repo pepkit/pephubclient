@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pandas
 import yaml
+import zipfile
 
-from pephubclient.constants import RegistryPath
 from pephubclient.exceptions import PEPExistsError
 
 
@@ -29,17 +29,23 @@ class FilesManager:
                 return f.read()
 
     @staticmethod
-    def create_project_folder(registry_path: RegistryPath) -> str:
+    def create_project_folder(
+        parent_path: str,
+        folder_name: str,
+    ) -> str:
         """
         Create new project folder
 
-        :param registry_path: project registry path
+        :param parent_path: parent path to create folder in
+        :param folder_name: folder name
         :return: folder_path
         """
-        folder_name = FilesManager._create_filename_to_save_downloaded_project(
-            registry_path
-        )
-        folder_path = os.path.join(os.getcwd(), folder_name)
+        if parent_path:
+            if not Path(parent_path).exists():
+                raise OSError(
+                    f"Parent path does not exist. Provided path: {parent_path}"
+                )
+        folder_path = os.path.join(parent_path or os.getcwd(), folder_name)
         Path(folder_path).mkdir(parents=True, exist_ok=True)
         return folder_path
 
@@ -62,21 +68,28 @@ class FilesManager:
     def delete_file_if_exists(filename: str) -> None:
         with suppress(FileNotFoundError):
             os.remove(filename)
-
-    @staticmethod
-    def _create_filename_to_save_downloaded_project(registry_path: RegistryPath) -> str:
-        """
-        Takes query string and creates output filename to save the project to.
-
-        :param registry_path: Query string that was used to find the project.
-        :return: Filename uniquely identifying the project.
-        """
-        filename = "_".join(filter(bool, [registry_path.namespace, registry_path.item]))
-        if registry_path.tag:
-            filename += f":{registry_path.tag}"
-        return filename
+            print(
+                f"\033[38;5;11m{f'File was deleted successfully -> {filename}'}\033[0m"
+            )
 
     @staticmethod
     def check_writable(path: str, force: bool = True):
         if not force and os.path.isfile(path):
             raise PEPExistsError(f"File already exists and won't be updated: {path}")
+
+    @staticmethod
+    def save_zip_file(files_dict: dict, file_path: str, force: bool = False) -> None:
+        """
+        Save zip file with provided files as dict.
+
+        :param files_dict: dict with files to save. e.g. {"file1.txt": "file1 content"}
+        :param file_path: filename to save zip file to
+        :param force: overwrite file if exists
+        :return: None
+        """
+        FilesManager.check_writable(path=file_path, force=force)
+        with zipfile.ZipFile(
+            file_path, mode="w", compression=zipfile.ZIP_DEFLATED
+        ) as zf:
+            for name, res in files_dict.items():
+                zf.writestr(name, str.encode(res))

@@ -1,5 +1,5 @@
 import datetime
-from typing import Optional, List
+from typing import Optional, List, Union
 
 from pydantic import BaseModel, Field, field_validator, ConfigDict
 from peppy.const import CONFIG_KEY, SUBSAMPLE_RAW_LIST_KEY, SAMPLE_RAW_DICT_KEY
@@ -43,6 +43,9 @@ class ProjectAnnotationModel(BaseModel):
     submission_date: datetime.datetime
     digest: str
     pep_schema: str
+    pop: bool = False
+    stars_number: Optional[int] = 0
+    forked_from: Optional[Union[str, None]] = None
 
 
 class SearchReturnModel(BaseModel):

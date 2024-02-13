@@ -29,6 +29,8 @@ def logout():
 def pull(
     project_registry_path: str,
     force: bool = typer.Option(False, help="Overwrite project if it exists."),
+    zip: bool = typer.Option(False, help="Save project as zip file."),
+    output: str = typer.Option(None, help="Output directory."),
 ):
     """
     Download and save project locally.
@@ -37,6 +39,8 @@ def pull(
         _client.pull,
         project_registry_path=project_registry_path,
         force=force,
+        output=output,
+        zip=zip,
     )
 
 

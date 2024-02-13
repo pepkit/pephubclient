@@ -1,3 +1,4 @@
 include requirements/*
 include README.md
 include pephubclient/pephub_oauth/*
+include pephubclient/modules/*
