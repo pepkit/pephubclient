@@ -30,6 +30,8 @@ or install the latest version from the GitHub repository:
 pip install git+https://github.com/pepkit/pephubclient.git
 ```
 
+---
+
 ### `pephubclient` features: 
 1) `push` (upload) projects)
 2) `pull` (download projects)

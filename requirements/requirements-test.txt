@@ -8,3 +8,4 @@ coveralls
 pytest-cov
 pre-commit
 coverage
+smokeshow
