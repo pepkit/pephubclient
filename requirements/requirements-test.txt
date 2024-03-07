@@ -7,3 +7,4 @@ flake8
 coveralls
 pytest-cov
 pre-commit
+coverage

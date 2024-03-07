@@ -37,7 +37,7 @@ class RequestManager:
         params: Optional[dict] = None,
         json: Optional[dict] = None,
     ) -> requests.Response:
-        return requests.request(
+        request_return = requests.request(
             method=method,
             url=url,
             verify=False,
@@ -46,6 +46,15 @@ class RequestManager:
             params=params,
             json=json,
         )
+        if request_return.status_code == 401:
+            if (
+                RequestManager.decode_response(request_return, output_json=True).get(
+                    "detail"
+                )
+                == "JWT has expired"
+            ):
+                raise ResponseError("JWT has expired. Please log in again.")
+        return request_return
 
     @staticmethod
     def decode_response(

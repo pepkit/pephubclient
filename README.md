@@ -1,14 +1,36 @@
-# `PEPHubClient`
+<h1 align="center">PEPHubClient</h1>
 
 [![PEP compatible](https://pepkit.github.io/img/PEP-compatible-green.svg)](https://pepkit.github.io)
 ![Run pytests](https://github.com/pepkit/pephubclient/workflows/Run%20pytests/badge.svg)
-[![codecov](https://codecov.io/gh/pepkit/pephubclient/branch/dev/graph/badge.svg)](https://codecov.io/gh/pepkit/pephubclient)
-[![pypi-badge](https://img.shields.io/pypi/v/pephubclient)](https://pypi.org/project/pephubclient)
+[![pypi-badge](https://img.shields.io/pypi/v/pephubclient?color=%2334D058)](https://pypi.org/project/pephubclient)
+[![pypi-version](https://img.shields.io/pypi/pyversions/pephubclient.svg?color=%2334D058)](https://pypi.org/project/pephubclient)
+[![Coverage](https://coverage-badge.samuelcolvin.workers.dev/pepkit/pephubclient.svg)](https://coverage-badge.samuelcolvin.workers.dev/redirect/pepkit/pephubclient)
+[![Github badge](https://img.shields.io/badge/source-github-354a75?logo=github)](https://github.com/pepkit/pephubclient)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
 
 `PEPHubClient` is a tool to provide Python API and CLI for [PEPhub](https://pephub.databio.org).
 
-`pephubclient` features: 
+
+---
+
+**Documentation**: <a href="https://pep.databio.org/" target="_blank">https://pep.databio.org</a>
+
+**Source Code**: <a href="https://github.com/pepkit/pephubclient" target="_blank">https://github.com/pepkit/pephubclient</a>
+
+---
+
+## Installation
+To install `pepdbagent` use this command: 
+```
+pip install pephubclient
+```
+or install the latest version from the GitHub repository:
+```
+pip install git+https://github.com/pepkit/pephubclient.git
+```
+
+### `pephubclient` features: 
 1) `push` (upload) projects)
 2) `pull` (download projects)
 
@@ -17,7 +39,7 @@ The authorization process is based on pephub device authorization protocol.
 To upload projects or to download private projects, user must be authorized through pephub.
 
 If you want to use your own pephub instance, you can specify it by setting `PEPHUB_BASE_URL` environment variable.
-e.g. `export PEPHUB_BASE_URL=https://pephub.databio.org` (This is original pephub instance)
+e.g. `export PEPHUB_BASE_URL=https://pephub.databio.org/` (This is original pephub instance)
 
 To login, use the `login` argument; to logout, use `logout`.
 

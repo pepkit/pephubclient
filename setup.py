@@ -49,6 +49,7 @@ setup(
     keywords="project, bioinformatics, metadata",
     url=f"https://github.com/databio/{PACKAGE}/",
     author=AUTHOR,
+    author_email="khorosh@virginia.edu",
     license="BSD2",
     entry_points={
         "console_scripts": [
@@ -56,7 +57,6 @@ setup(
         ],
     },
     package_data={PACKAGE: ["templates/*"]},
-    scripts=None,
     include_package_data=True,
     test_suite="tests",
     tests_require=read_reqs("test"),
