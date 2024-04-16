@@ -2,6 +2,11 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.
 
+## [0.4.2] - 2024-04-16
+### Updated
+- View creation, by adding description and no_fail flag
+
+
 ## [0.4.1] - 2024-03-07
 ### Fixed
 - Expired token error handling  ([#17](https://github.com/pepkit/pephubclient/issues/17))

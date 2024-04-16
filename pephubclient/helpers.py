@@ -35,7 +35,7 @@ class RequestManager:
         headers: Optional[dict] = None,
         cookies: Optional[dict] = None,
         params: Optional[dict] = None,
-        json: Optional[dict] = None,
+        json: Optional[Union[dict, list]] = None,
     ) -> requests.Response:
         request_return = requests.request(
             method=method,
