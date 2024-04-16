@@ -71,7 +71,9 @@ class PEPHubView(RequestManager):
         name: str,
         tag: str,
         view_name: str,
+        description: str = None,
         sample_list: list = None,
+        no_fail: bool = False,
     ):
         """
         Create view in project in PEPhub.
@@ -79,9 +81,15 @@ class PEPHubView(RequestManager):
         :param namespace: namespace of project
         :param name: name of project
         :param tag: tag of project
+        :param description: description of the view
         :param view_name: name of the view
         :param sample_list: list of sample names
+        :param no_fail: whether to raise an error if view was not added to the project
         """
+
+        if not sample_list or not isinstance(sample_list, list):
+            raise ValueError("Sample list must be a list of sample names.")
+
         url = self._build_view_request_url(
             namespace=namespace, name=name, view_name=view_name
         )
@@ -92,6 +100,7 @@ class PEPHubView(RequestManager):
             method="POST",
             url=url,
             headers=self.parse_header(self.__jwt_data),
+            params={"description": description, "no_fail": no_fail},
             json=sample_list,
         )
         if response.status_code == ResponseStatusCodes.ACCEPTED:
