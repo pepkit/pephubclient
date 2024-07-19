@@ -52,4 +52,4 @@ class SearchReturnModel(BaseModel):
     count: int
     limit: int
     offset: int
-    items: List[ProjectAnnotationModel]
+    results: List[ProjectAnnotationModel]
