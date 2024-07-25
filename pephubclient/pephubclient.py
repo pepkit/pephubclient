@@ -249,7 +249,7 @@ class PEPHubClient(RequestManager):
         if pephub_response.status_code == ResponseStatusCodes.OK:
             decoded_response = self.decode_response(pephub_response, output_json=True)
             project_list = []
-            for project_found in decoded_response["items"]:
+            for project_found in decoded_response["results"]:
                 project_list.append(ProjectAnnotationModel(**project_found))
             return SearchReturnModel(**decoded_response)
 

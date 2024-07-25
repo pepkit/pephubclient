@@ -154,7 +154,7 @@ class TestSmoke:
             "count": 1,
             "limit": 100,
             "offset": 0,
-            "items": [
+            "results": [
                 {
                     "namespace": "namespace1",
                     "name": "basic",
@@ -185,7 +185,7 @@ class TestSmoke:
 
         return_value = PEPHubClient().find_project(namespace="namespace1")
         assert return_value.count == 1
-        assert len(return_value.items) == 1
+        assert len(return_value.results) == 1
 
 
 class TestHelpers:
