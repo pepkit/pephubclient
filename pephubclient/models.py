@@ -42,7 +42,7 @@ class ProjectAnnotationModel(BaseModel):
     last_update_date: datetime.datetime
     submission_date: datetime.datetime
     digest: str
-    pep_schema: str
+    pep_schema: Union[str, int, None] = None
     pop: bool = False
     stars_number: Optional[int] = 0
     forked_from: Optional[Union[str, None]] = None
