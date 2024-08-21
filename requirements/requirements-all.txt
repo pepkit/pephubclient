@@ -1,5 +1,5 @@
 typer>=0.7.0
-peppy>=0.40.1
+peppy>=0.40.5
 requests>=2.28.2
 pydantic>2.5.0
 pandas>=2.0.0
