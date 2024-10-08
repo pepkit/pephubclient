@@ -301,7 +301,9 @@ class PEPHubClient(RequestManager):
             return correct_proj_dict.model_dump(by_alias=True)
 
         if pephub_response.status_code == ResponseStatusCodes.NOT_EXIST:
-            raise ResponseError("File does not exist, or you are unauthorized.")
+            raise ResponseError(
+                f"Could not find PEP at registry path: {registry_path}. Either it does not exist, or you are unauthorized. Log in to view private PEPs."
+            )
         if pephub_response.status_code == ResponseStatusCodes.INTERNAL_ERROR:
             raise ResponseError(
                 f"Internal server error. Unexpected return value. Error: {pephub_response.status_code}"
