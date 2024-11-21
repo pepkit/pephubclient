@@ -3,6 +3,11 @@
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.
 
 
+## [0.4.5] - 2024-11-21
+### Added
+- Function for unwrapping PEPhub registry path
+- Timeout for requests
+
 ## [0.4.4] - 2024-08-21
 ### Fixed
 - Project annotation model
