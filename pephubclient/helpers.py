@@ -45,6 +45,7 @@ class RequestManager:
             headers=headers,
             params=params,
             json=json,
+            timeout=10,
         )
         if request_return.status_code == 401:
             if (
@@ -158,6 +159,15 @@ def is_registry_path(input_string: str) -> bool:
     except (ValidationError, TypeError):
         return False
     return True
+
+
+def unwrap_registry_path(input_string: str) -> RegistryPath:
+    """
+    Unwrap registry path from string
+    :param str input_string: path to the PEP (or registry path)
+    :return RegistryPath: RegistryPath object
+    """
+    return RegistryPath(**parse_registry_path(input_string))
 
 
 def _build_filename(registry_path: RegistryPath) -> str:

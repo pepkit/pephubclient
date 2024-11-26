@@ -231,7 +231,6 @@ class TestHelpers:
 
 
 class TestSamples:
-
     def test_get(self, mocker):
         return_value = {
             "genome": "phc_test1",

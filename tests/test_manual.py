@@ -4,7 +4,6 @@ import pytest
 
 @pytest.mark.skip(reason="Manual test")
 class TestViewsManual:
-
     def test_get(self):
         ff = PEPHubClient().view.get(
             "databio",

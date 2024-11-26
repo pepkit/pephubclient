@@ -4,7 +4,7 @@ import logging
 import coloredlogs
 
 __app_name__ = "pephubclient"
-__version__ = "0.4.4"
+__version__ = "0.4.5"
 __author__ = "Oleksandr Khoroshevskyi, Rafal Stepien"
 
 
