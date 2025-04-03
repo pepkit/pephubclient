@@ -30,6 +30,7 @@ from pephubclient.models import (
 from pephubclient.pephub_oauth.pephub_oauth import PEPHubAuth
 from pephubclient.modules.view import PEPHubView
 from pephubclient.modules.sample import PEPHubSample
+from pephubclient.schemas.schema import PEPHubSchema
 
 urllib3.disable_warnings()
 
@@ -40,6 +41,7 @@ class PEPHubClient(RequestManager):
 
         self.__view = PEPHubView(self.__jwt_data)
         self.__sample = PEPHubSample(self.__jwt_data)
+        self.__schema = PEPHubSchema(self.__jwt_data)
 
     @property
     def view(self) -> PEPHubView:
@@ -48,6 +50,10 @@ class PEPHubClient(RequestManager):
     @property
     def sample(self) -> PEPHubSample:
         return self.__sample
+
+    @property
+    def schema(self) -> PEPHubSchema:
+        return self.__schema
 
     def login(self) -> NoReturn:
         """

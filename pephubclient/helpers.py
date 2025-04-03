@@ -1,7 +1,8 @@
 import json
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Optional, Union, Literal, Tuple
 import peppy
 import yaml
+from pathlib import Path
 import os
 import pandas as pd
 from peppy.const import (
@@ -21,7 +22,12 @@ from urllib.parse import urlencode
 from ubiquerg import parse_registry_path
 from pydantic import ValidationError
 
-from pephubclient.exceptions import PEPExistsError, ResponseError
+from pephubclient.exceptions import (
+    PEPExistsError,
+    ResponseError,
+    FileDoesNotExistError,
+    BasePephubclientException,
+)
 from pephubclient.constants import RegistryPath
 from pephubclient.files_manager import FilesManager
 from pephubclient.models import ProjectDict
@@ -322,3 +328,75 @@ def save_pep(
         parent_path=project_path, folder_name=file_name
     )
     _save_unzipped_pep(project, folder_path, force=force)
+
+
+def open_schema(file_path: Union[str, Path]) -> dict:
+    """
+    Open schema file that are saved in yaml or json format.
+
+    :param file_path: path to the schema file
+
+    :raises: FileDoesNotExistError - if file doesn't exist
+    :return: file object in dict format
+    """
+    if isinstance(file_path, str):
+        file_path = Path(file_path)
+
+    if not file_path.is_file():
+        raise FileDoesNotExistError(
+            f"Provided schema file doesn't exist. File path: `{str(file_path)}`"
+        )
+
+    if file_path.suffix == ".yaml" or file_path.suffix == ".yml":
+        with open(file_path, "r") as file:
+            data = yaml.safe_load(file)
+
+    if file_path.suffix == ".json":
+        with open(file_path, "r") as file:
+            data = json.load(file)
+
+    return data
+
+
+def save_schema(
+    file_path: Union[str, Path],
+    schema_obj: dict,
+    format: Literal["json", "yaml"] = "yaml",
+) -> None:
+    """
+    Save dict object as file in json or yaml format
+
+    :param file_path: path to the file
+    :param schema_obj: content to be saved in the file
+    :param format: Format in which file should be saved on disc. Default: yaml
+
+    :return: File path.
+    """
+
+    if format == "yaml":
+        schema_obj = yaml.dump(schema_obj)
+
+    elif format == "json":
+        schema_obj = json.dumps(schema_obj, indent=4)
+    else:
+        raise BasePephubclientException(f"Incorrect format provided: '{format}'")
+
+    with open(file_path, "w") as file:
+        file.write(schema_obj)
+
+
+def schema_path_converter(schema_path: str) -> Tuple[str, str, str]:
+    """
+    Convert schema path to namespace, name
+
+    :param schema_path: schema path that has structure: "namespace/name.yaml"
+    :return: tuple(namespace, name, version)
+    """
+    if "/" in schema_path:
+        namespace, name_tag = schema_path.split("/")
+        if ":" in name_tag:
+            name, version = name_tag.split(":")
+            return namespace, name, version
+
+        return namespace, name_tag, "latest"
+    raise BasePephubclientException(f"Error in: '{schema_path}'")
