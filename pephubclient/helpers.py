@@ -25,7 +25,6 @@ from pydantic import ValidationError
 from pephubclient.exceptions import (
     PEPExistsError,
     ResponseError,
-    FileDoesNotExistError,
     BasePephubclientException,
 )
 from pephubclient.constants import RegistryPath
@@ -336,14 +335,14 @@ def open_schema(file_path: Union[str, Path]) -> dict:
 
     :param file_path: path to the schema file
 
-    :raises: FileDoesNotExistError - if file doesn't exist
+    :raises: FileNotFoundError - if file doesn't exist
     :return: file object in dict format
     """
     if isinstance(file_path, str):
         file_path = Path(file_path)
 
     if not file_path.is_file():
-        raise FileDoesNotExistError(
+        raise FileNotFoundError(
             f"Provided schema file doesn't exist. File path: `{str(file_path)}`"
         )
 
@@ -351,9 +350,14 @@ def open_schema(file_path: Union[str, Path]) -> dict:
         with open(file_path, "r") as file:
             data = yaml.safe_load(file)
 
-    if file_path.suffix == ".json":
+    elif file_path.suffix == ".json":
         with open(file_path, "r") as file:
             data = json.load(file)
+    else:
+        raise BasePephubclientException(
+            f"Incorrect file format provided: '{file_path.suffix}'. "
+            "Only yaml and json formats are supported."
+        )
 
     return data
 

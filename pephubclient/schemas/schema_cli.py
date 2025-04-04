@@ -35,6 +35,7 @@ def get(
     new_name = os.path.join(output, f"{namespace}_{schema_name}_{version}.{format}")
     save_schema(new_name, schema_obj=schema_value, format=format)
 
+
 @schemas_app.command(help="Create new schema in PEPhub")
 def create(
     schema: str = typer.Option(
