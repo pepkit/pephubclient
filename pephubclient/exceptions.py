@@ -34,7 +34,7 @@ class PEPExistsError(BasePephubclientException):
 
 
 class FileDoesNotExistError(BasePephubclientException):
-    default_message = "File Doesn't exist."
+    default_message = "File does not exist."
 
     def __init__(self, message: Optional[str] = None):
         self.message = message
