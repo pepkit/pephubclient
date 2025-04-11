@@ -112,6 +112,7 @@ class TestSchemas:
                 "maintainers": "new_maintainer",
                 "private": True,
                 "lifecycle_stage": "development",
+            },
         )
 
         assert jwt_mock.called
