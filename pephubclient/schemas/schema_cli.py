@@ -31,6 +31,8 @@ def get(
         schema_name=schema_name,
         version=version,
     )
+    if output is None:
+        output = os.getcwd()
 
     new_name = os.path.join(output, f"{namespace}_{schema_name}_{version}.{format}")
     save_schema(new_name, schema_obj=schema_value, format=format)
