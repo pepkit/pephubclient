@@ -111,8 +111,7 @@ class TestSchemas:
             update_fields={
                 "maintainers": "new_maintainer",
                 "private": True,
-                "lifecycle_stage": "I don't know",
-            },
+                "lifecycle_stage": "development",
         )
 
         assert jwt_mock.called
