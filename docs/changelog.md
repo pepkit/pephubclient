@@ -3,7 +3,7 @@
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.
 
 
-## [0.5.0] - 2025-03-31
+## [0.5.0] - 2026-01-26
 ### Added
 - Added schemas CLI and Python methods for fetching schemas from PEPhub
 
