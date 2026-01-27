@@ -5,7 +5,6 @@ from pephubclient.helpers import call_client_func
 from pephubclient.helpers import open_schema, schema_path_converter, save_schema
 from pephubclient.pephubclient import PEPHubClient
 
-
 schemas_app = typer.Typer(
     pretty_exceptions_short=False,
     pretty_exceptions_show_locals=False,
