@@ -30,6 +30,7 @@ from pephubclient.models import (
 from pephubclient.pephub_oauth.pephub_oauth import PEPHubAuth
 from pephubclient.modules.view import PEPHubView
 from pephubclient.modules.sample import PEPHubSample
+from pephubclient.schemas.schema import PEPHubSchema
 
 urllib3.disable_warnings()
 
@@ -40,6 +41,7 @@ class PEPHubClient(RequestManager):
 
         self.__view = PEPHubView(self.__jwt_data)
         self.__sample = PEPHubSample(self.__jwt_data)
+        self.__schema = PEPHubSchema(self.__jwt_data)
 
     @property
     def view(self) -> PEPHubView:
@@ -48,6 +50,10 @@ class PEPHubClient(RequestManager):
     @property
     def sample(self) -> PEPHubSample:
         return self.__sample
+
+    @property
+    def schema(self) -> PEPHubSchema:
+        return self.__schema
 
     def login(self) -> NoReturn:
         """
@@ -204,6 +210,7 @@ class PEPHubClient(RequestManager):
         self,
         namespace: str,
         query_string: str = "",
+        tag: str = None,
         limit: int = 100,
         offset: int = 0,
         filter_by: Literal["submission_date", "last_update_date"] = None,
@@ -215,6 +222,7 @@ class PEPHubClient(RequestManager):
 
         :param namespace: Namespace where to search for projects
         :param query_string: Search query
+        :param tag: Project tag
         :param limit: Return limit
         :param offset: Return offset
         :param filter_by: Use filter date. Option: [submission_date, last_update_date]
@@ -227,6 +235,7 @@ class PEPHubClient(RequestManager):
             "q": query_string,
             "limit": limit,
             "offset": offset,
+            "tag": tag,
         }
         if filter_by in ["submission_date", "last_update_date"]:
             query_param["filter_by"] = filter_by
