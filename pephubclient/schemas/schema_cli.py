@@ -87,7 +87,6 @@ def add_version(
     tags: List[str] = typer.Option(list(), help="Tags of the version"),
     release_notes: str = typer.Option("", help="Version release notes"),
 ):
-
     schema_value = open_schema(schema)
     call_client_func(
         _client_schema.add_version,
