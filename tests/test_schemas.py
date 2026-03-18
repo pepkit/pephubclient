@@ -24,7 +24,6 @@ versions_example = {
 
 # @pytest.mark.skip("Tests are not implemented yet")
 class TestSchemas:
-
     def test_get_schema(self, mocker, test_jwt):
         jwt_mock = mocker.patch(
             "pephubclient.files_manager.FilesManager.load_jwt_data_from_file",
@@ -119,7 +118,6 @@ class TestSchemas:
         assert requests_mock.called
 
     def test_delete_schema(self, mocker, test_jwt):
-
         jwt_mock = mocker.patch(
             "pephubclient.files_manager.FilesManager.load_jwt_data_from_file",
             return_value=test_jwt,
@@ -188,7 +186,6 @@ class TestSchemas:
         assert requests_mock.called
 
     def test_delete_version(self, mocker, test_jwt):
-
         jwt_mock = mocker.patch(
             "pephubclient.files_manager.FilesManager.load_jwt_data_from_file",
             return_value=test_jwt,
