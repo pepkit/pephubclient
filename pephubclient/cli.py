@@ -11,11 +11,18 @@ app = typer.Typer()
 
 
 @app.command()
-def login():
+def login(
+    token: str = typer.Option(
+        None, help="JWT token from PEPhub. If provided, skips the browser login."
+    ),
+    url: str = typer.Option(
+        None, help="Base URL for PEPhub, if not using the default host."
+    ),
+):
     """
     Login to PEPhub
     """
-    call_client_func(_client.login)
+    call_client_func(_client.login, token=token, url=url)
 
 
 @app.command()

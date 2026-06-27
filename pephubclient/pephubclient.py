@@ -2,18 +2,20 @@ from typing import NoReturn, Optional, Literal
 from typing_extensions import deprecated
 
 import peppy
-from peppy.const import NAME_KEY, CONFIG_KEY
+from peppy.const import (
+    NAME_KEY,
+    CONFIG_KEY,
+    SUBSAMPLE_RAW_LIST_KEY,
+    SAMPLE_RAW_DICT_KEY,
+)
 import urllib3
 from pydantic import ValidationError
 from ubiquerg import parse_registry_path
 
 from pephubclient.constants import (
-    PEPHUB_PEP_API_BASE_URL,
-    PEPHUB_PUSH_URL,
     RegistryPath,
     ResponseStatusCodes,
-    PEPHUB_PEP_SEARCH_URL,
-    PATH_TO_FILE_WITH_JWT,
+    PATH_TO_TOKEN_FILE,
 )
 from pephubclient.exceptions import (
     IncorrectQueryStringError,
@@ -37,7 +39,9 @@ urllib3.disable_warnings()
 
 class PEPHubClient(RequestManager):
     def __init__(self):
-        self.__jwt_data = FilesManager.load_jwt_data_from_file(PATH_TO_FILE_WITH_JWT)
+        cached = FilesManager.load_token_data(PATH_TO_TOKEN_FILE)
+        self.__jwt_data = cached.token
+        self.__base_url = cached.base_url.rstrip("/") + "/"
 
         self.__view = PEPHubView(self.__jwt_data)
         self.__sample = PEPHubSample(self.__jwt_data)
@@ -55,20 +59,32 @@ class PEPHubClient(RequestManager):
     def schema(self) -> PEPHubSchema:
         return self.__schema
 
-    def login(self) -> NoReturn:
+    def login(self, token: Optional[str] = None, url: Optional[str] = None) -> NoReturn:
         """
-        Log in to PEPhub
-        """
-        user_token = PEPHubAuth().login_to_pephub()
+        Log in to PEPhub.
 
-        FilesManager.save_jwt_data_to_file(PATH_TO_FILE_WITH_JWT, user_token)
-        self.__jwt_data = FilesManager.load_jwt_data_from_file(PATH_TO_FILE_WITH_JWT)
+        :param str token: JWT token to register directly. If provided, the browser
+            device-code flow is skipped.
+        :param str url: Base URL for PEPhub. If provided, overrides the cached/default URL.
+        """
+        cached = FilesManager.load_token_data(PATH_TO_TOKEN_FILE)
+        if url:
+            cached.base_url = url
+        if token:
+            MessageHandler.print_warning("Token provided. Registering...")
+            cached.token = token
+        else:
+            cached.token = PEPHubAuth().login_to_pephub(base_url=cached.base_url)
+
+        FilesManager.save_token_data(PATH_TO_TOKEN_FILE, cached)
+        self.__jwt_data = cached.token
+        self.__base_url = cached.base_url.rstrip("/") + "/"
 
     def logout(self) -> NoReturn:
         """
         Log out from PEPhub
         """
-        FilesManager.delete_file_if_exists(PATH_TO_FILE_WITH_JWT)
+        FilesManager.delete_file_if_exists(PATH_TO_TOKEN_FILE)
         self.__jwt_data = None
 
     def pull(
@@ -174,6 +190,10 @@ class PEPHubClient(RequestManager):
         if name:
             pep_dict[CONFIG_KEY][NAME_KEY] = name
 
+        pep_dict["config"] = pep_dict.pop(CONFIG_KEY)
+        pep_dict["samples"] = pep_dict.pop(SAMPLE_RAW_DICT_KEY)
+        pep_dict["subsamples"] = pep_dict.pop(SUBSAMPLE_RAW_LIST_KEY)
+        print(pep_dict)
         upload_data = ProjectUploadData(
             pep_dict=pep_dict,
             tag=tag,
@@ -353,10 +373,11 @@ class PEPHubClient(RequestManager):
         variables_string = self.parse_query_param(query_param)
         endpoint += variables_string
 
-        return PEPHUB_PEP_API_BASE_URL + endpoint
+        return f"{self.__base_url}api/v1/projects/" + endpoint
 
-    @staticmethod
-    def _build_project_search_url(namespace: str, query_param: dict = None) -> str:
+    def _build_project_search_url(
+        self, namespace: str, query_param: dict = None
+    ) -> str:
         """
         Build request for searching projects form pephub
 
@@ -367,14 +388,13 @@ class PEPHubClient(RequestManager):
         variables_string = RequestManager.parse_query_param(query_param)
         endpoint = variables_string
 
-        return PEPHUB_PEP_SEARCH_URL.format(namespace=namespace) + endpoint
+        return f"{self.__base_url}api/v1/namespaces/{namespace}/projects" + endpoint
 
-    @staticmethod
-    def _build_push_request_url(namespace: str) -> str:
+    def _build_push_request_url(self, namespace: str) -> str:
         """
         Build project uplaod request used in pephub
 
         :param namespace: namespace where project will be uploaded
         :return: url string
         """
-        return PEPHUB_PUSH_URL.format(namespace=namespace)
+        return f"{self.__base_url}api/v1/namespaces/{namespace}/projects/json"
