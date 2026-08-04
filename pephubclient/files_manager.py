@@ -3,30 +3,33 @@ from contextlib import suppress
 from pathlib import Path
 
 import pandas
+import toml
 import yaml
 import zipfile
 
+from pephubclient.constants import CachedToken
 from pephubclient.exceptions import PEPExistsError
 
 
 class FilesManager:
     @staticmethod
-    def save_jwt_data_to_file(path: str, jwt_data: str) -> None:
+    def save_token_data(path: str, token: CachedToken) -> None:
         """
-        Save jwt to provided path
+        Save cached token data (jwt + base url) to provided path as TOML.
         """
         Path(os.path.dirname(path)).mkdir(parents=True, exist_ok=True)
         with open(path, "w") as f:
-            f.write(jwt_data)
+            toml.dump(token.model_dump(), f)
 
     @staticmethod
-    def load_jwt_data_from_file(path: str) -> str:
+    def load_token_data(path: str) -> CachedToken:
         """
-        Open the file with username and ID and load this data.
+        Load cached token data from the TOML file, or return defaults if missing.
         """
         with suppress(FileNotFoundError):
             with open(path, "r") as f:
-                return f.read()
+                return CachedToken(**toml.load(f))
+        return CachedToken()
 
     @staticmethod
     def create_project_folder(

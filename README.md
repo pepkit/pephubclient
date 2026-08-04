@@ -40,10 +40,19 @@ Additionally, our client supports pephub authorization.
 The authorization process is based on pephub device authorization protocol.
 To upload projects or to download private projects, user must be authorized through pephub.
 
-If you want to use your own pephub instance, you can specify it by setting `PEPHUB_BASE_URL` environment variable.
-e.g. `export PEPHUB_BASE_URL=https://pephub.databio.org/` (This is original pephub instance)
+If you want to use your own pephub instance, you can specify it by setting the `PEPHUB_BASE_URL` environment variable.
+e.g. `export PEPHUB_BASE_URL=https://pephub.databio.org/` (This is the original pephub instance)
 
 To login, use the `login` argument; to logout, use `logout`.
+
+`login` accepts two optional arguments:
+- `--token` — register a JWT token directly, skipping the browser device-code flow.
+- `--url` — base URL of the pephub instance to authenticate against (overrides `PEPHUB_BASE_URL` for this login).
+
+e.g. `phc login --token <JWT> --url https://pephub.databio.org/`
+
+Credentials are cached in `$PH_HOME/jwt.toml`, which stores both the token and its base URL.
+`PH_HOME` defaults to `~/.pephubclient/`; set the `PH_HOME` environment variable to use a different directory.
 
 ----
 ```text

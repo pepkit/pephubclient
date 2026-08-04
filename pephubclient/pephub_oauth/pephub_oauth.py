@@ -1,14 +1,15 @@
 import json
 import time
-from typing import Type, Union
+from typing import Optional, Type, Union
 
 import requests
 from pydantic import BaseModel
 
+from pephubclient.constants import DEFAULT_BASE_URL
 from pephubclient.helpers import MessageHandler, RequestManager
 from pephubclient.pephub_oauth.const import (
-    PEPHUB_DEVICE_INIT_URI,
-    PEPHUB_DEVICE_TOKEN_URI,
+    DEVICE_INIT_PATH,
+    DEVICE_TOKEN_PATH,
 )
 from pephubclient.pephub_oauth.exceptions import (
     PEPHubResponseException,
@@ -25,7 +26,8 @@ class PEPHubAuth(RequestManager):
     Class responsible for authorization to PEPhub.
     """
 
-    def login_to_pephub(self):
+    def login_to_pephub(self, base_url: Optional[str] = None):
+        self._base_url = (base_url or DEFAULT_BASE_URL).rstrip("/") + "/"
         pephub_response = self._request_pephub_for_device_code()
         print(
             f"User verification code: {pephub_response.device_code}, please go to the website: "
@@ -65,7 +67,7 @@ class PEPHubAuth(RequestManager):
         """
         response = PEPHubAuth.send_request(
             method="POST",
-            url=PEPHUB_DEVICE_INIT_URI,
+            url=f"{self._base_url}{DEVICE_INIT_PATH}",
             params=None,
             headers=None,
         )
@@ -78,7 +80,7 @@ class PEPHubAuth(RequestManager):
         """
         response = PEPHubAuth.send_request(
             method="POST",
-            url=PEPHUB_DEVICE_TOKEN_URI,
+            url=f"{self._base_url}{DEVICE_TOKEN_PATH}",
             params=None,
             headers={"device-code": device_code},
         )

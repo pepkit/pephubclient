@@ -1,4 +1,5 @@
 from pephubclient import PEPHubClient
+from pephubclient.constants import CachedToken
 from unittest.mock import Mock
 
 example_schema = {
@@ -26,8 +27,8 @@ versions_example = {
 class TestSchemas:
     def test_get_schema(self, mocker, test_jwt):
         jwt_mock = mocker.patch(
-            "pephubclient.files_manager.FilesManager.load_jwt_data_from_file",
-            return_value=test_jwt,
+            "pephubclient.files_manager.FilesManager.load_token_data",
+            return_value=CachedToken(token=test_jwt),
         )
         requests_mock = mocker.patch(
             "requests.request",
@@ -47,8 +48,8 @@ class TestSchemas:
 
     def test_get_schema_versions(self, mocker, test_jwt):
         jwt_mock = mocker.patch(
-            "pephubclient.files_manager.FilesManager.load_jwt_data_from_file",
-            return_value=test_jwt,
+            "pephubclient.files_manager.FilesManager.load_token_data",
+            return_value=CachedToken(token=test_jwt),
         )
         requests_mock = mocker.patch(
             "requests.request",
@@ -71,8 +72,8 @@ class TestSchemas:
 
     def test_create_schema(self, mocker, test_jwt):
         jwt_mock = mocker.patch(
-            "pephubclient.files_manager.FilesManager.load_jwt_data_from_file",
-            return_value=test_jwt,
+            "pephubclient.files_manager.FilesManager.load_token_data",
+            return_value=CachedToken(token=test_jwt),
         )
         requests_mock = mocker.patch(
             "requests.request",
@@ -94,8 +95,8 @@ class TestSchemas:
 
     def test_update_schema(self, mocker, test_jwt):
         jwt_mock = mocker.patch(
-            "pephubclient.files_manager.FilesManager.load_jwt_data_from_file",
-            return_value=test_jwt,
+            "pephubclient.files_manager.FilesManager.load_token_data",
+            return_value=CachedToken(token=test_jwt),
         )
         requests_mock = mocker.patch(
             "requests.request",
@@ -119,8 +120,8 @@ class TestSchemas:
 
     def test_delete_schema(self, mocker, test_jwt):
         jwt_mock = mocker.patch(
-            "pephubclient.files_manager.FilesManager.load_jwt_data_from_file",
-            return_value=test_jwt,
+            "pephubclient.files_manager.FilesManager.load_token_data",
+            return_value=CachedToken(token=test_jwt),
         )
         requests_mock = mocker.patch(
             "requests.request",
@@ -139,8 +140,8 @@ class TestSchemas:
 
     def test_add_version(self, mocker, test_jwt):
         jwt_mock = mocker.patch(
-            "pephubclient.files_manager.FilesManager.load_jwt_data_from_file",
-            return_value=test_jwt,
+            "pephubclient.files_manager.FilesManager.load_token_data",
+            return_value=CachedToken(token=test_jwt),
         )
         requests_mock = mocker.patch(
             "requests.request",
@@ -162,8 +163,8 @@ class TestSchemas:
 
     def test_update_version(self, mocker, test_jwt):
         jwt_mock = mocker.patch(
-            "pephubclient.files_manager.FilesManager.load_jwt_data_from_file",
-            return_value=test_jwt,
+            "pephubclient.files_manager.FilesManager.load_token_data",
+            return_value=CachedToken(token=test_jwt),
         )
         requests_mock = mocker.patch(
             "requests.request",
@@ -187,8 +188,8 @@ class TestSchemas:
 
     def test_delete_version(self, mocker, test_jwt):
         jwt_mock = mocker.patch(
-            "pephubclient.files_manager.FilesManager.load_jwt_data_from_file",
-            return_value=test_jwt,
+            "pephubclient.files_manager.FilesManager.load_token_data",
+            return_value=CachedToken(token=test_jwt),
         )
         requests_mock = mocker.patch(
             "requests.request",

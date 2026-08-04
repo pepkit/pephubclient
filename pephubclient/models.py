@@ -11,8 +11,8 @@ class ProjectDict(BaseModel):
     """
 
     config: dict = Field(alias=CONFIG_KEY)
-    subsample_list: Optional[list] = Field(alias=SUBSAMPLE_RAW_LIST_KEY)
-    sample_list: list = Field(alias=SAMPLE_RAW_DICT_KEY)
+    subsamples: Optional[list] = Field(alias=SUBSAMPLE_RAW_LIST_KEY)
+    samples: list = Field(alias=SAMPLE_RAW_DICT_KEY)
 
     model_config = ConfigDict(populate_by_name=True, extra="allow")
 
