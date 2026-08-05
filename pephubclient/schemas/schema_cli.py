@@ -1,8 +1,13 @@
-import typer
 import os
-from typing import List
-from pephubclient.helpers import call_client_func
-from pephubclient.helpers import open_schema, schema_path_converter, save_schema
+
+import typer
+
+from pephubclient.helpers import (
+    call_client_func,
+    open_schema,
+    save_schema,
+    schema_path_converter,
+)
 from pephubclient.pephubclient import PEPHubClient
 
 schemas_app = typer.Typer(
@@ -21,7 +26,7 @@ def get(
     schema_registry_path: str,
     output: str = typer.Option(None, help="Output directory."),
     format: str = typer.Option("json", help="Format in which file should be saved"),
-):
+) -> None:
     namespace, schema_name, version = schema_path_converter(schema_registry_path)
 
     schema_value = call_client_func(
@@ -50,11 +55,11 @@ def create(
     description: str = typer.Option("", help="Schema description"),
     maintainers: str = typer.Option("", help="Schema maintainers"),
     contributors: str = typer.Option("", help="Schema contributors"),
-    tags: List[str] = typer.Option(list(), help="Tags of the version"),
+    tags: list[str] = typer.Option(list(), help="Tags of the version"),
     release_notes: str = typer.Option("", help="Version release notes"),
     private: bool = typer.Option(False, help="Make schema private"),
     lifecycle_stage: str = typer.Option("", help="Lifecycle stage"),
-):
+) -> None:
     schema_value = open_schema(schema)
 
     call_client_func(
@@ -84,9 +89,9 @@ def add_version(
     schema_name: str = typer.Option(..., help="Schema name"),
     version: str = typer.Option("1.0.0", help="Schema version"),
     contributors: str = typer.Option("", help="Schema contributors"),
-    tags: List[str] = typer.Option(list(), help="Tags of the version"),
+    tags: list[str] = typer.Option(list(), help="Tags of the version"),
     release_notes: str = typer.Option("", help="Version release notes"),
-):
+) -> None:
     schema_value = open_schema(schema)
     call_client_func(
         _client_schema.add_version,
@@ -107,7 +112,7 @@ def delete_version(
     namespace: str = typer.Option(..., help="Schema namespace"),
     schema_name: str = typer.Option(..., help="Schema name"),
     version: str = typer.Option(..., help="Schema version"),
-):
+) -> None:
     call_client_func(
         _client_schema.delete_version,
         namespace=namespace,
@@ -122,7 +127,7 @@ def delete_version(
 def remove(
     namespace: str = typer.Option(..., help="Schema namespace"),
     schema_name: str = typer.Option(..., help="Schema name"),
-):
+) -> None:
     call_client_func(
         _client_schema.delete_schema,
         namespace=namespace,

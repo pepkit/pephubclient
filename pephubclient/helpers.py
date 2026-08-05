@@ -1,33 +1,32 @@
 import json
-from typing import Any, Callable, Optional, Union, Literal, Tuple
-import peppy
-import yaml
-from pathlib import Path
 import os
-import pandas as pd
-from peppy.const import (
-    NAME_KEY,
-    DESC_KEY,
-    CONFIG_KEY,
-    SUBSAMPLE_RAW_LIST_KEY,
-    SAMPLE_RAW_DICT_KEY,
-    CFG_SAMPLE_TABLE_KEY,
-    CFG_SUBSAMPLE_TABLE_KEY,
-)
-
-import requests
-from requests.exceptions import ConnectionError
+from pathlib import Path
+from typing import Any, Callable, Literal
 from urllib.parse import urlencode
 
-from ubiquerg import parse_registry_path
+import pandas as pd
+import peppy
+import requests
+import yaml
+from peppy.const import (
+    CFG_SAMPLE_TABLE_KEY,
+    CFG_SUBSAMPLE_TABLE_KEY,
+    CONFIG_KEY,
+    DESC_KEY,
+    NAME_KEY,
+    SAMPLE_RAW_DICT_KEY,
+    SUBSAMPLE_RAW_LIST_KEY,
+)
 from pydantic import ValidationError
+from requests.exceptions import ConnectionError
+from ubiquerg import parse_registry_path
 
+from pephubclient.constants import RegistryPath
 from pephubclient.exceptions import (
+    BasePephubclientException,
     PEPExistsError,
     ResponseError,
-    BasePephubclientException,
 )
-from pephubclient.constants import RegistryPath
 from pephubclient.files_manager import FilesManager
 from pephubclient.models import ProjectDict
 
@@ -37,10 +36,10 @@ class RequestManager:
     def send_request(
         method: str,
         url: str,
-        headers: Optional[dict] = None,
-        cookies: Optional[dict] = None,
-        params: Optional[dict] = None,
-        json: Optional[Union[dict, list]] = None,
+        headers: dict | None = None,
+        cookies: dict | None = None,
+        params: dict | None = None,
+        json: dict | list | None = None,
     ) -> requests.Response:
         request_return = requests.request(
             method=method,
@@ -65,16 +64,18 @@ class RequestManager:
     @staticmethod
     def decode_response(
         response: requests.Response, encoding: str = "utf-8", output_json: bool = False
-    ) -> Union[str, dict]:
+    ) -> str | dict:
         """
         Decode the response from GitHub and pack the returned data into appropriate model.
 
-        :param response: Response from GitHub.
-        :param encoding: Response encoding [Default: utf-8]
-        :param output_json: If True, return response in json format
-        :return: Response data as an instance of correct model.
-        """
+        Args:
+            response: Response from GitHub.
+            encoding: Response encoding.
+            output_json: If True, return response in json format.
 
+        Returns:
+            Response data as an instance of correct model.
+        """
         try:
             if output_json:
                 return response.json()
@@ -86,21 +87,27 @@ class RequestManager:
     @staticmethod
     def parse_query_param(pep_variables: dict) -> str:
         """
-        Grab all the variables passed by user (if any) and parse them to match the format specified
-        by PEPhub API for query parameters.
+        Parse the variables passed by the user to match the format specified
+        by the PEPhub API for query parameters.
 
-        :param pep_variables: dict of query parameters
-        :return: PEPHubClient variables transformed into string in correct format.
+        Args:
+            pep_variables: Dict of query parameters.
+
+        Returns:
+            PEPHubClient variables transformed into string in correct format.
         """
         return "?" + urlencode(pep_variables)
 
     @staticmethod
-    def parse_header(jwt_data: Optional[str] = None) -> dict:
+    def parse_header(jwt_data: str | None = None) -> dict:
         """
-        Create Authorization header
+        Create Authorization header.
 
-        :param jwt_data: jwt string
-        :return: Authorization dict
+        Args:
+            jwt_data: JWT string.
+
+        Returns:
+            Authorization dict.
         """
         if jwt_data:
             return {"Authorization": jwt_data}
@@ -110,7 +117,7 @@ class RequestManager:
 
 class MessageHandler:
     """
-    Class holding print function in different colors
+    Class holding print function in different colors.
     """
 
     RED = 9
@@ -134,11 +141,13 @@ def call_client_func(func: Callable[..., Any], **kwargs) -> Any:
     """
     Catch exceptions in functions called through cli.
 
-    :param func: The function to call.
-    :param kwargs: The keyword arguments to pass to the function.
-    :return: The result of the function call.
-    """
+    Args:
+        func: The function to call.
+        **kwargs: The keyword arguments to pass to the function.
 
+    Returns:
+        The result of the function call.
+    """
     try:
         func(**kwargs)
     except ConnectionError as err:
@@ -153,9 +162,13 @@ def call_client_func(func: Callable[..., Any], **kwargs) -> Any:
 
 def is_registry_path(input_string: str) -> bool:
     """
-    Check if input is a registry path to pephub
-    :param str input_string: path to the PEP (or registry path)
-    :return bool: True if input is a registry path
+    Check if input is a registry path to pephub.
+
+    Args:
+        input_string: Path to the PEP (or registry path).
+
+    Returns:
+        True if input is a registry path.
     """
     if input_string.endswith(".yaml"):
         return False
@@ -168,19 +181,26 @@ def is_registry_path(input_string: str) -> bool:
 
 def unwrap_registry_path(input_string: str) -> RegistryPath:
     """
-    Unwrap registry path from string
-    :param str input_string: path to the PEP (or registry path)
-    :return RegistryPath: RegistryPath object
+    Unwrap registry path from string.
+
+    Args:
+        input_string: Path to the PEP (or registry path).
+
+    Returns:
+        RegistryPath object.
     """
     return RegistryPath(**parse_registry_path(input_string))
 
 
 def _build_filename(registry_path: RegistryPath) -> str:
     """
-    Takes query string and creates output filename to save the project to.
+    Take a query string and create the output filename to save the project to.
 
-    :param registry_path: Query string that was used to find the project.
-    :return: Filename uniquely identifying the project.
+    Args:
+        registry_path: Query string that was used to find the project.
+
+    Returns:
+        Filename uniquely identifying the project.
     """
     filename = "_".join(filter(bool, [registry_path.namespace, registry_path.item]))
     if registry_path.tag:
@@ -190,13 +210,13 @@ def _build_filename(registry_path: RegistryPath) -> str:
 
 def _save_zip_pep(project: dict, zip_filepath: str, force: bool = False) -> None:
     """
-    Zip and save a project
+    Zip and save a project.
 
-    :param project: peppy project to zip
-    :param zip_filepath: path to save zip file
-    :param force: overwrite project if exists
+    Args:
+        project: Peppy project to zip.
+        zip_filepath: Path to save zip file.
+        force: Overwrite project if it exists.
     """
-
     content_to_zip = {}
     config = project[CONFIG_KEY]
     project_name = config[NAME_KEY]
@@ -231,12 +251,12 @@ def _save_unzipped_pep(
     project_dict: dict, folder_path: str, force: bool = False
 ) -> None:
     """
-    Save unzipped project to specified folder
+    Save unzipped project to specified folder.
 
-    :param project_dict: raw pep project
-    :param folder_path: path to save project
-    :param force: overwrite project if exists
-    :return: None
+    Args:
+        project_dict: Raw pep project.
+        folder_path: Path to save project.
+        force: Overwrite project if it exists.
     """
 
     def full_path(fn: str) -> str:
@@ -285,22 +305,23 @@ def _save_unzipped_pep(
 
 
 def save_pep(
-    project: Union[dict, peppy.Project],
+    project: dict | peppy.Project,
     reg_path: str = None,
     force: bool = False,
-    project_path: Optional[str] = None,
+    project_path: str | None = None,
     zip: bool = False,
 ) -> None:
     """
     Save project locally.
 
-    :param dict project: PEP dictionary (raw project)
-    :param str reg_path: Project registry path in PEPhub (e.g. databio/base:default). If not provided,
-        folder will be created with just project name.
-    :param bool force: overwrite project if exists
-    :param str project_path: Path where project will be saved. By default, it will be saved in current directory.
-    :param bool zip: If True, save project as zip file
-    :return: None
+    Args:
+        project: PEP dictionary (raw project).
+        reg_path: Project registry path in PEPhub (e.g. databio/base:default). If not
+            provided, a folder will be created with just the project name.
+        force: Overwrite project if it exists.
+        project_path: Path where project will be saved. By default, it will be saved in
+            the current directory.
+        zip: If True, save project as zip file.
     """
     if isinstance(project, peppy.Project):
         project = project.to_dict(extended=True, orient="records")
@@ -329,14 +350,18 @@ def save_pep(
     _save_unzipped_pep(project, folder_path, force=force)
 
 
-def open_schema(file_path: Union[str, Path]) -> dict:
+def open_schema(file_path: str | Path) -> dict:
     """
-    Open schema file that are saved in yaml or json format.
+    Open schema file that is saved in yaml or json format.
 
-    :param file_path: path to the schema file
+    Args:
+        file_path: Path to the schema file.
 
-    :raises: FileNotFoundError - if file doesn't exist
-    :return: file object in dict format
+    Returns:
+        File object in dict format.
+
+    Raises:
+        FileNotFoundError: If the file doesn't exist.
     """
     if isinstance(file_path, str):
         file_path = Path(file_path)
@@ -363,20 +388,18 @@ def open_schema(file_path: Union[str, Path]) -> dict:
 
 
 def save_schema(
-    file_path: Union[str, Path],
+    file_path: str | Path,
     schema_obj: dict,
     format: Literal["json", "yaml"] = "yaml",
 ) -> None:
     """
-    Save dict object as file in json or yaml format
+    Save dict object as file in json or yaml format.
 
-    :param file_path: path to the file
-    :param schema_obj: content to be saved in the file
-    :param format: Format in which file should be saved on disc. Default: yaml
-
-    :return: File path.
+    Args:
+        file_path: Path to the file.
+        schema_obj: Content to be saved in the file.
+        format: Format in which the file should be saved on disc.
     """
-
     if format == "yaml":
         schema_obj = yaml.dump(schema_obj)
 
@@ -389,12 +412,15 @@ def save_schema(
         file.write(schema_obj)
 
 
-def schema_path_converter(schema_path: str) -> Tuple[str, str, str]:
+def schema_path_converter(schema_path: str) -> tuple[str, str, str]:
     """
-    Convert schema path to namespace, name
+    Convert schema path to namespace, name, and version.
 
-    :param schema_path: schema path that has structure: "namespace/name.yaml"
-    :return: tuple(namespace, name, version)
+    Args:
+        schema_path: Schema path that has the structure "namespace/name.yaml".
+
+    Returns:
+        Tuple of (namespace, name, version).
     """
     if "/" in schema_path:
         namespace, name_tag = schema_path.split("/")

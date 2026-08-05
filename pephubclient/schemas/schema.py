@@ -1,21 +1,20 @@
 import logging
-from typing import Union, List
 
-from pephubclient.helpers import RequestManager
 from pephubclient.constants import ResponseStatusCodes
+from pephubclient.exceptions import ResponseError
+from pephubclient.helpers import RequestManager
 from pephubclient.schemas.constants import (
-    PEPHUB_SCHEMA_VERSION_URL,
-    PEPHUB_SCHEMA_VERSIONS_URL,
+    LATEST_VERSION,
     PEPHUB_SCHEMA_NEW_SCHEMA_URL,
     PEPHUB_SCHEMA_NEW_VERSION_URL,
     PEPHUB_SCHEMA_RECORD_URL,
-    LATEST_VERSION,
+    PEPHUB_SCHEMA_VERSION_URL,
+    PEPHUB_SCHEMA_VERSIONS_URL,
 )
-from pephubclient.exceptions import ResponseError
 from pephubclient.schemas.models import (
-    SchemaVersionResult,
-    NewSchemaVersionModel,
     NewSchemaRecordModel,
+    NewSchemaVersionModel,
+    SchemaVersionResult,
     UpdateSchemaRecordFields,
     UpdateSchemaVersionFields,
 )
@@ -25,30 +24,33 @@ _LOGGER = logging.getLogger("pephubclient")
 
 class PEPHubSchema(RequestManager):
     """
-    Class for managing schemas in PEPhub and provides methods for
-        getting, creating, updating and removing schemas records and schema versions.
+    Class for managing schemas in PEPhub.
+
+    Provides methods for getting, creating, updating and removing schema records and
+    schema versions.
     """
 
-    def __init__(self, jwt_data: str = None):
+    def __init__(self, jwt_data: str | None = None) -> None:
         """
-        :param jwt_data: jwt token for authorization
+        Args:
+            jwt_data: JWT token for authorization.
         """
-
         self.__jwt_data = jwt_data
 
     def get(
         self, namespace: str, schema_name: str, version: str = LATEST_VERSION
     ) -> dict:
         """
-        Get schema value for specific schema version.
+        Get schema value for a specific schema version.
 
-        :param: namespace: namespace of schema
-        :param: schema_name: name of schema
-        :param: version: version of schema
+        Args:
+            namespace: Namespace of schema.
+            schema_name: Name of schema.
+            version: Version of schema.
 
-        :return: Schema object as dictionary
+        Returns:
+            Schema object as dictionary.
         """
-
         pephub_response = self.send_request(
             method="GET",
             url=PEPHUB_SCHEMA_VERSION_URL.format(
@@ -74,17 +76,15 @@ class PEPHubSchema(RequestManager):
 
     def get_versions(self, namespace: str, schema_name: str) -> SchemaVersionResult:
         """
-        Get list of versions
+        Get list of versions.
 
-        :param namespace: Namespace of the schema record
-        :param schema_name: Name of the schema record
+        Args:
+            namespace: Namespace of the schema record.
+            schema_name: Name of the schema record.
 
-        :return: {
-            pagination: PaginationResult
-            results: List[SchemaVersionAnnotation]
-        }
+        Returns:
+            Schema version result with pagination and a list of version annotations.
         """
-
         pephub_response = self.send_request(
             method="GET",
             url=PEPHUB_SCHEMA_VERSIONS_URL.format(
@@ -115,33 +115,33 @@ class PEPHubSchema(RequestManager):
         schema_name: str,
         schema_value: dict,
         version: str = "1.0.0",
-        description: str = None,
-        maintainers: str = None,
-        contributors: str = None,
-        release_notes: str = None,
-        tags: Union[str, List[str], dict, None] = None,
-        lifecycle_stage: str = None,
+        description: str | None = None,
+        maintainers: str | None = None,
+        contributors: str | None = None,
+        release_notes: str | None = None,
+        tags: str | list[str] | dict | None = None,
+        lifecycle_stage: str | None = None,
         private: bool = False,
     ) -> None:
         """
-        Create a new schema record + version in the database
+        Create a new schema record and version in the database.
 
-        :param namespace: Namespace of the schema
-        :param schema_name: Name of the schema record
-        :param schema_value: Schema value itself in dict format
-        :param version: First version of the schema
-        :param description: Schema description
-        :param maintainers: Schema maintainers
-        :param contributors: Schema contributors of current version
-        :param release_notes: Release notes for current version
-        :param tags: Tags of the current version. Can be str, list[str], or dict
-        :param lifecycle_stage: Stage of the schema record
-        :param private: Weather project should be public or private. Default: False (public)
+        Args:
+            namespace: Namespace of the schema.
+            schema_name: Name of the schema record.
+            schema_value: Schema value itself in dict format.
+            version: First version of the schema.
+            description: Schema description.
+            maintainers: Schema maintainers.
+            contributors: Schema contributors of the current version.
+            release_notes: Release notes for the current version.
+            tags: Tags of the current version. Can be str, list[str], or dict.
+            lifecycle_stage: Stage of the schema record.
+            private: Whether the project should be public or private.
 
-        :raise: ResponseError if status not 202.
-        :return: None
+        Raises:
+            ResponseError: If status is not 202.
         """
-
         url = PEPHUB_SCHEMA_NEW_SCHEMA_URL.format(namespace=namespace)
         request_body = NewSchemaRecordModel(
             schema_name=schema_name,
@@ -186,23 +186,24 @@ class PEPHubSchema(RequestManager):
         schema_name: str,
         schema_value: dict,
         version: str = "1.0.0",
-        contributors: str = None,
-        release_notes: str = None,
-        tags: Union[str, List[str], dict, None] = None,
+        contributors: str | None = None,
+        release_notes: str | None = None,
+        tags: str | list[str] | dict | None = None,
     ) -> None:
         """
-        Add new version to the schema registry
+        Add a new version to the schema registry.
 
-        :param namespace: Namespace of the schema
-        :param schema_name: Name of the schema record
-        :param schema_value: Schema value itself in dict format
-        :param version: First version of the schema
-        :param contributors: Schema contributors of current version
-        :param release_notes: Release notes for current version
-        :param tags: Tags of the current version. Can be str, list[str], or dict
+        Args:
+            namespace: Namespace of the schema.
+            schema_name: Name of the schema record.
+            schema_value: Schema value itself in dict format.
+            version: First version of the schema.
+            contributors: Schema contributors of the current version.
+            release_notes: Release notes for the current version.
+            tags: Tags of the current version. Can be str, list[str], or dict.
 
-        :raise: ResponseError if status not 202.
-        :return: None
+        Raises:
+            ResponseError: If status is not 202.
         """
         url = PEPHUB_SCHEMA_NEW_VERSION_URL.format(
             namespace=namespace, schema_name=schema_name
@@ -243,26 +244,20 @@ class PEPHubSchema(RequestManager):
         self,
         namespace: str,
         schema_name: str,
-        update_fields: Union[dict, UpdateSchemaRecordFields],
+        update_fields: dict | UpdateSchemaRecordFields,
     ) -> None:
         """
-        Update schema registry data
+        Update schema registry data.
 
-        :param namespace: Namespace of the schema
-        :param schema_name: Name of the schema version
-        :param update_fields: dict or pydantic model UpdateSchemaRecordFields:
-            {
-                maintainers: str,
-                lifecycle_stage: str,
-                private: bool,
-                name: str,
-                description: str,
-            }
+        Args:
+            namespace: Namespace of the schema.
+            schema_name: Name of the schema version.
+            update_fields: Dict or pydantic model UpdateSchemaRecordFields with the
+                fields maintainers, lifecycle_stage, private, name, and description.
 
-        :raise: ResponseError if status not 202.
-        :return: None
+        Raises:
+            ResponseError: If status is not 202.
         """
-
         if isinstance(update_fields, dict):
             update_fields = UpdateSchemaRecordFields(**update_fields)
 
@@ -304,25 +299,21 @@ class PEPHubSchema(RequestManager):
         namespace: str,
         schema_name: str,
         version: str,
-        update_fields: Union[dict, UpdateSchemaVersionFields],
+        update_fields: dict | UpdateSchemaVersionFields,
     ) -> None:
         """
-        Update released version of the schema.
+        Update a released version of the schema.
 
-        :param namespace: Namespace of the schema
-        :param schema_name: Name of the schema version
-        :param version: Schema version
-        :param update_fields: dict or pydantic model UpdateSchemaVersionFields:
-            {
-                contributors: str,
-                schema_value: str,
-                release_notes: str,
-            }
+        Args:
+            namespace: Namespace of the schema.
+            schema_name: Name of the schema version.
+            version: Schema version.
+            update_fields: Dict or pydantic model UpdateSchemaVersionFields with the
+                fields contributors, schema_value, and release_notes.
 
-        :raise: ResponseError if status not 202.
-        :return: None
+        Raises:
+            ResponseError: If status is not 202.
         """
-
         url = PEPHUB_SCHEMA_VERSION_URL.format(
             namespace=namespace, schema_name=schema_name, version=version
         )
@@ -361,12 +352,12 @@ class PEPHubSchema(RequestManager):
 
     def delete_schema(self, namespace: str, schema_name: str) -> None:
         """
-        Delete schema from the database
+        Delete schema from the database.
 
-        :param namespace: Namespace of the schema
-        :param schema_name: Name of the schema version
+        Args:
+            namespace: Namespace of the schema.
+            schema_name: Name of the schema version.
         """
-
         url = PEPHUB_SCHEMA_RECORD_URL.format(
             namespace=namespace, schema_name=schema_name
         )
@@ -404,16 +395,16 @@ class PEPHubSchema(RequestManager):
         version: str,
     ) -> None:
         """
-        Delete schema Version
+        Delete schema version.
 
-        :param namespace: Namespace of the schema
-        :param schema_name: Name of the schema
-        :param version: Schema version
+        Args:
+            namespace: Namespace of the schema.
+            schema_name: Name of the schema.
+            version: Schema version.
 
-        :raise: ResponseError if status not 202.
-        :return: None
+        Raises:
+            ResponseError: If status is not 202.
         """
-
         url = PEPHUB_SCHEMA_VERSION_URL.format(
             namespace=namespace, schema_name=schema_name, version=version
         )

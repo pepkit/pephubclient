@@ -19,10 +19,11 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install test dependencies
-        run: if [ -f requirements/requirements-test.txt ]; then pip install -r requirements/requirements-test.txt; fi
+      - name: Install package with test dependencies
+        run: pip install ".[test]"
 
-      - run: pip install .
+      - name: Install coverage upload tool
+        run: pip install smokeshow
 
       - name: Run tests
         run: coverage run -m pytest

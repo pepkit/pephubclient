@@ -1,7 +1,7 @@
 from pephubclient.cli import __app_name__, app
 
 
-def main():
+def main() -> None:
     app(prog_name=__app_name__)
 
 

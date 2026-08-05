@@ -1,6 +1,7 @@
+from unittest.mock import Mock
+
 from pephubclient import PEPHubClient
 from pephubclient.constants import CachedToken
-from unittest.mock import Mock
 
 example_schema = {
     "a": "b",

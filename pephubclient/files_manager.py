@@ -1,11 +1,11 @@
 import os
+import zipfile
 from contextlib import suppress
 from pathlib import Path
 
 import pandas
 import toml
 import yaml
-import zipfile
 
 from pephubclient.constants import CachedToken
 from pephubclient.exceptions import PEPExistsError
@@ -37,11 +37,14 @@ class FilesManager:
         folder_name: str,
     ) -> str:
         """
-        Create new project folder
+        Create new project folder.
 
-        :param parent_path: parent path to create folder in
-        :param folder_name: folder name
-        :return: folder_path
+        Args:
+            parent_path: Parent path to create folder in.
+            folder_name: Folder name.
+
+        Returns:
+            The created folder path.
         """
         if parent_path:
             if not Path(parent_path).exists():
@@ -53,13 +56,15 @@ class FilesManager:
         return folder_path
 
     @staticmethod
-    def save_yaml(config: dict, full_path: str, not_force: bool = False):
+    def save_yaml(config: dict, full_path: str, not_force: bool = False) -> None:
         FilesManager.check_writable(path=full_path, force=not not_force)
         with open(full_path, "w") as outfile:
             yaml.dump(config, outfile, default_flow_style=False)
 
     @staticmethod
-    def save_pandas(df: pandas.DataFrame, full_path: str, not_force: bool = False):
+    def save_pandas(
+        df: pandas.DataFrame, full_path: str, not_force: bool = False
+    ) -> None:
         FilesManager.check_writable(path=full_path, force=not not_force)
         df.to_csv(full_path, index=False)
 
@@ -76,7 +81,7 @@ class FilesManager:
             )
 
     @staticmethod
-    def check_writable(path: str, force: bool = True):
+    def check_writable(path: str, force: bool = True) -> None:
         if not force and os.path.isfile(path):
             raise PEPExistsError(f"File already exists and won't be updated: {path}")
 
@@ -85,10 +90,10 @@ class FilesManager:
         """
         Save zip file with provided files as dict.
 
-        :param files_dict: dict with files to save. e.g. {"file1.txt": "file1 content"}
-        :param file_path: filename to save zip file to
-        :param force: overwrite file if exists
-        :return: None
+        Args:
+            files_dict: Dict with files to save, e.g. {"file1.txt": "file1 content"}.
+            file_path: Filename to save zip file to.
+            force: Overwrite file if it exists.
         """
         FilesManager.check_writable(path=file_path, force=force)
         with zipfile.ZipFile(

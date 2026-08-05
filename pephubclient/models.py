@@ -1,17 +1,16 @@
 import datetime
-from typing import Optional, List, Union
 
-from pydantic import BaseModel, Field, field_validator, ConfigDict
-from peppy.const import CONFIG_KEY, SUBSAMPLE_RAW_LIST_KEY, SAMPLE_RAW_DICT_KEY
+from peppy.const import CONFIG_KEY, SAMPLE_RAW_DICT_KEY, SUBSAMPLE_RAW_LIST_KEY
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class ProjectDict(BaseModel):
     """
-    Project dict (raw) model
+    Project dict (raw) model.
     """
 
     config: dict = Field(alias=CONFIG_KEY)
-    subsamples: Optional[list] = Field(alias=SUBSAMPLE_RAW_LIST_KEY)
+    subsamples: list | None = Field(alias=SUBSAMPLE_RAW_LIST_KEY)
     samples: list = Field(alias=SAMPLE_RAW_DICT_KEY)
 
     model_config = ConfigDict(populate_by_name=True, extra="allow")
@@ -19,16 +18,16 @@ class ProjectDict(BaseModel):
 
 class ProjectUploadData(BaseModel):
     """
-    Model used in post request to upload project
+    Model used in post request to upload project.
     """
 
     pep_dict: ProjectDict
-    tag: Optional[str] = "default"
-    is_private: Optional[bool] = False
-    overwrite: Optional[bool] = False
+    tag: str | None = "default"
+    is_private: bool | None = False
+    overwrite: bool | None = False
 
     @field_validator("tag")
-    def tag_should_not_be_none(cls, v):
+    def tag_should_not_be_none(cls, v: str | None) -> str:
         return v or "default"
 
 
@@ -42,14 +41,14 @@ class ProjectAnnotationModel(BaseModel):
     last_update_date: datetime.datetime
     submission_date: datetime.datetime
     digest: str
-    pep_schema: Union[str, int, None] = None
+    pep_schema: str | int | None = None
     pop: bool = False
-    stars_number: Optional[int] = 0
-    forked_from: Optional[Union[str, None]] = None
+    stars_number: int | None = 0
+    forked_from: str | None = None
 
 
 class SearchReturnModel(BaseModel):
     count: int
     limit: int
     offset: int
-    results: List[ProjectAnnotationModel]
+    results: list[ProjectAnnotationModel]

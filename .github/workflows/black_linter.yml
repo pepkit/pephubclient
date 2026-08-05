@@ -1,8 +1,6 @@
 name: Lint
 
-on:
-  pull_request:
-    branches: [main]
+on: [push, pull_request]
 
 jobs:
   lint:
@@ -10,4 +8,8 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
-      - uses: psf/black@stable
+        with:
+          python-version: "3.12"
+      - run: pip install ruff
+      - run: ruff check .
+      - run: ruff format --check .

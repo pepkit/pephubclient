@@ -1,0 +1,69 @@
+[project]
+name = "pephubclient"
+version = "0.6.1"
+description = "PEPhub command line interface."
+readme = "README.md"
+license = "BSD-2-Clause"
+requires-python = ">=3.10"
+authors = [
+    { name = "Oleksandr Khoroshevskyi", email = "khorosh@virginia.edu" },
+    { name = "Rafal Stepien" },
+]
+keywords = ["project", "bioinformatics", "metadata"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: BSD License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+dependencies = [
+    "typer>=0.7.0",
+    "peppy>=0.40.5",
+    "requests>=2.28.2",
+    "pydantic>2.5.0",
+    "pandas>=2.0.0",
+    "ubiquerg>=0.6.3",
+    "coloredlogs>=15.0.1",
+    "toml>=0.10.2",
+    "typing_extensions>=4.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/databio/pephubclient"
+
+[project.scripts]
+phc = "pephubclient.__main__:main"
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "pytest-mock",
+    "pytest-cov",
+    "coverage",
+    "python-dotenv",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["pephubclient"]
+
+[tool.pytest.ini_options]
+addopts = "-rfE"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = ["F403", "F405", "E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["pephubclient"]

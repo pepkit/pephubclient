@@ -1,5 +1,6 @@
-from pephubclient.pephubclient import PEPHubClient
 import pytest
+
+from pephubclient.pephubclient import PEPHubClient
 
 
 @pytest.mark.skip(reason="Manual test")

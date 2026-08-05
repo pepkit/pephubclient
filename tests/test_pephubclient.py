@@ -5,8 +5,8 @@ import pytest
 
 from pephubclient.constants import CachedToken
 from pephubclient.exceptions import ResponseError
-from pephubclient.pephubclient import PEPHubClient
 from pephubclient.helpers import is_registry_path
+from pephubclient.pephubclient import PEPHubClient
 
 SAMPLE_PEP = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),

@@ -18,17 +18,17 @@ def login(
     url: str = typer.Option(
         None, help="Base URL for PEPhub, if not using the default host."
     ),
-):
+) -> None:
     """
-    Login to PEPhub
+    Login to PEPhub.
     """
     call_client_func(_client.login, token=token, url=url)
 
 
 @app.command()
-def logout():
+def logout() -> None:
     """
-    Logout
+    Logout.
     """
     _client.logout()
 
@@ -39,7 +39,7 @@ def pull(
     force: bool = typer.Option(False, help="Overwrite project if it exists."),
     zip: bool = typer.Option(False, help="Save project as zip file."),
     output: str = typer.Option(None, help="Output directory."),
-):
+) -> None:
     """
     Download and save project locally.
     """
@@ -66,9 +66,9 @@ def push(
         False, help="Force push to the database. Use it to update, or upload project."
     ),
     is_private: bool = typer.Option(False, help="Upload project as private."),
-):
+) -> None:
     """
-    Upload/update project in PEPhub
+    Upload/update project in PEPhub.
     """
 
     call_client_func(
@@ -82,7 +82,7 @@ def push(
     )
 
 
-def version_callback(value: bool):
+def version_callback(value: bool) -> None:
     if value:
         typer.echo(f"{__app_name__} version: {__version__}")
         raise typer.Exit()
@@ -94,7 +94,7 @@ def common(
     version: bool = typer.Option(
         None, "--version", "-v", callback=version_callback, help="App version"
     ),
-):
+) -> None:
     pass
 
 
