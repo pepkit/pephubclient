@@ -1,6 +1,6 @@
 import logging
 
-import peppy
+import peprs
 
 from pephubclient.constants import (
     PEPHUB_VIEW_SAMPLE_URL,
@@ -31,7 +31,7 @@ class PEPHubView(RequestManager):
 
     def get(
         self, namespace: str, name: str, tag: str, view_name: str, raw: bool = False
-    ) -> peppy.Project | dict:
+    ) -> peprs.Project | dict:
         """
         Get view from project in PEPhub.
 
@@ -43,7 +43,7 @@ class PEPHubView(RequestManager):
             raw: If True, return raw response.
 
         Returns:
-            peppy.Project object or dictionary of the project (view).
+            peprs.Project object or dictionary of the project (view).
         """
         url = self._build_view_request_url(
             namespace=namespace, name=name, view_name=view_name
@@ -58,8 +58,8 @@ class PEPHubView(RequestManager):
             output = self.decode_response(response, output_json=True)
             if raw:
                 return output
-            output = ProjectDict(**output).model_dump(by_alias=True)
-            return peppy.Project.from_dict(output)
+            output = ProjectDict(**output).model_dump()
+            return peprs.Project.from_dict(output)
         elif response.status_code == ResponseStatusCodes.NOT_EXIST:
             raise ResponseError("View does not exist, or you are unauthorized.")
         else:

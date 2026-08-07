@@ -1,18 +1,14 @@
 from typing import Literal
 
-import peppy
+import peprs
 import urllib3
-from peppy.const import (
-    CONFIG_KEY,
-    NAME_KEY,
-    SAMPLE_RAW_DICT_KEY,
-    SUBSAMPLE_RAW_LIST_KEY,
-)
+from peprs.const import CONFIG_KEY
 from pydantic import ValidationError
 from typing_extensions import deprecated
 from ubiquerg import parse_registry_path
 
 from pephubclient.constants import (
+    NAME_KEY,
     PATH_TO_TOKEN_FILE,
     RegistryPath,
     ResponseStatusCodes,
@@ -119,21 +115,19 @@ class PEPHubClient(RequestManager):
     def load_project(
         self,
         project_registry_path: str,
-        query_param: dict | None = None,
-    ) -> peppy.Project:
+    ) -> peprs.Project:
         """
-        Load a peppy project from PEPhub as a peppy.Project object.
+        Load a project from PEPhub as a peprs.Project object.
 
         Args:
             project_registry_path: Registry path of the project.
             query_param: Query parameters used in the get request.
 
         Returns:
-            The peppy project.
+            The peprs project.
         """
-        raw_pep = self.load_raw_pep(project_registry_path, query_param)
-        peppy_project = peppy.Project().from_dict(raw_pep)
-        return peppy_project
+
+        return peprs.Project.from_pephub(project_registry_path)
 
     def push(
         self,
@@ -156,9 +150,9 @@ class PEPHubClient(RequestManager):
             is_private: Specifies whether the project should be private.
             force: Force push to the database. Use it to update, or upload a project.
         """
-        peppy_project = peppy.Project(cfg=cfg)
+        peprs_project = peprs.Project(cfg)
         self.upload(
-            project=peppy_project,
+            project=peprs_project,
             namespace=namespace,
             name=name,
             tag=tag,
@@ -168,7 +162,7 @@ class PEPHubClient(RequestManager):
 
     def upload(
         self,
-        project: peppy.Project,
+        project: peprs.Project,
         namespace: str,
         name: str = None,
         tag: str = None,
@@ -176,7 +170,7 @@ class PEPHubClient(RequestManager):
         force: bool = True,
     ) -> None:
         """
-        Upload a peppy project to PEPhub.
+        Upload a peprs project to PEPhub.
 
         Args:
             project: Project object that has to be uploaded to the DB.
@@ -186,17 +180,14 @@ class PEPHubClient(RequestManager):
             is_private: Make project private.
             force: Overwrite project if it exists.
         """
+        # peprs already emits config/samples/subsamples keys, so no remapping is needed.
         pep_dict = project.to_dict(
-            extended=True,
-            orient="records",
+            raw=True,
+            by_sample=True,
         )
         if name:
             pep_dict[CONFIG_KEY][NAME_KEY] = name
 
-        pep_dict["config"] = pep_dict.pop(CONFIG_KEY)
-        pep_dict["samples"] = pep_dict.pop(SAMPLE_RAW_DICT_KEY)
-        pep_dict["subsamples"] = pep_dict.pop(SUBSAMPLE_RAW_LIST_KEY)
-        print(pep_dict)
         upload_data = ProjectUploadData(
             pep_dict=pep_dict,
             tag=tag,
@@ -243,13 +234,13 @@ class PEPHubClient(RequestManager):
         self,
         namespace: str,
         query_string: str = "",
-        tag: str = None,
+        tag: str | None = None,
         limit: int = 100,
         offset: int = 0,
-        filter_by: Literal["submission_date", "last_update_date"] = None,
-        start_date: str = None,
-        end_date: str = None,
-    ) -> SearchReturnModel:
+        filter_by: Literal["submission_date", "last_update_date"] | None = None,
+        start_date: str | None = None,
+        end_date: str | None = None,
+    ) -> SearchReturnModel | None:
         """
         Find projects in a specific namespace and return a list of PEP annotations.
 
@@ -303,9 +294,9 @@ class PEPHubClient(RequestManager):
         registry_path: str,
         jwt_data: str | None = None,
         query_param: dict | None = None,
-    ) -> dict:
+    ) -> dict | None:
         """
-        Request PEPhub and return the requested project as a peppy.Project object.
+        Request PEPhub and return the requested project as a raw project dict.
 
         !!! This method is deprecated. Use load_raw_pep instead. !!!
 
@@ -323,9 +314,9 @@ class PEPHubClient(RequestManager):
         self,
         registry_path: str,
         query_param: dict | None = None,
-    ) -> dict:
+    ) -> dict | None:
         """
-        Request PEPhub and return the requested project as a peppy.Project object.
+        Request PEPhub and return the requested project as a raw project dict.
 
         Args:
             registry_path: Project namespace, eg. "geo/GSE124224:tag".
@@ -349,7 +340,7 @@ class PEPHubClient(RequestManager):
             correct_proj_dict = ProjectDict(**decoded_response)
 
             # This step is necessary because of this issue: https://github.com/pepkit/pephub/issues/124
-            return correct_proj_dict.model_dump(by_alias=True)
+            return correct_proj_dict.model_dump()
 
         if pephub_response.status_code == ResponseStatusCodes.NOT_EXIST:
             raise ResponseError("File does not exist, or you are unauthorized.")
@@ -392,7 +383,7 @@ class PEPHubClient(RequestManager):
         return f"{self.__base_url}api/v1/projects/" + endpoint
 
     def _build_project_search_url(
-        self, namespace: str, query_param: dict = None
+        self, namespace: str, query_param: dict | None = None
     ) -> str:
         """
         Build the request for searching projects from pephub.

@@ -16,6 +16,7 @@ def device_code_return():
 def test_raw_pep_return():
     sample_prj = {
         "config": {
+            "pep_version": "2.1.0",
             "This": "is config",
             "description": "desc",
             "name": "sample name",

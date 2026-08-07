@@ -1,17 +1,19 @@
 import datetime
 
-from peppy.const import CONFIG_KEY, SAMPLE_RAW_DICT_KEY, SUBSAMPLE_RAW_LIST_KEY
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator
 
 
 class ProjectDict(BaseModel):
     """
     Project dict (raw) model.
+
+    Field names match the PEPHub raw-PEP payload and the peprs dialect
+    (``config``/``samples``/``subsamples``), so no aliases are needed.
     """
 
-    config: dict = Field(alias=CONFIG_KEY)
-    subsamples: list | None = Field(alias=SUBSAMPLE_RAW_LIST_KEY)
-    samples: list = Field(alias=SAMPLE_RAW_DICT_KEY)
+    config: dict
+    subsamples: list | None = None
+    samples: list
 
     model_config = ConfigDict(populate_by_name=True, extra="allow")
 
