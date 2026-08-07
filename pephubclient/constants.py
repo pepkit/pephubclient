@@ -3,6 +3,12 @@ from enum import Enum
 
 from pydantic import BaseModel, field_validator
 
+# PEP config/sample keys not exported by peprs.const
+NAME_KEY: str = "name"
+DESC_KEY: str = "description"
+CFG_SAMPLE_TABLE_KEY: str = "sample_table"
+CFG_SUBSAMPLE_TABLE_KEY: str = "subsample_table"
+
 DEFAULT_BASE_URL: str = "https://pephub-api.databio.org/"
 PEPHUB_BASE_URL: str = os.getenv("PEPHUB_BASE_URL", default=DEFAULT_BASE_URL)
 # PEPHUB_BASE_URL = "http://0.0.0.0:8000/"

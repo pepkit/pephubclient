@@ -2,6 +2,13 @@
   
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.
 
+## [0.7.0] - 2026-08-06
+### Changed
+- Replaced the `peppy` dependency with `peprs` (Rust-backed PEP object model).
+  `load_project`, `view.get`, `push`, and `upload` now operate on `peprs.Project`
+  objects instead of `peppy.Project`.
+- Added `pyyaml` as a direct dependency (previously pulled in transitively via peppy).
+
 ## [0.5.1] - 2026-03-18
 ### Fixed
 - Fixed saving project to pephub [#55](https://github.com/pepkit/pephubclient/issues/55)

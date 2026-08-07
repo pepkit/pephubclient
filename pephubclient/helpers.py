@@ -5,23 +5,25 @@ from typing import Any, Callable, Literal
 from urllib.parse import urlencode
 
 import pandas as pd
-import peppy
+import peprs
 import requests
 import yaml
-from peppy.const import (
-    CFG_SAMPLE_TABLE_KEY,
-    CFG_SUBSAMPLE_TABLE_KEY,
+from peprs.const import (
     CONFIG_KEY,
-    DESC_KEY,
-    NAME_KEY,
     SAMPLE_RAW_DICT_KEY,
-    SUBSAMPLE_RAW_LIST_KEY,
+    SUBSAMPLE_RAW_DICT_KEY,
 )
 from pydantic import ValidationError
 from requests.exceptions import ConnectionError
 from ubiquerg import parse_registry_path
 
-from pephubclient.constants import RegistryPath
+from pephubclient.constants import (
+    CFG_SAMPLE_TABLE_KEY,
+    CFG_SUBSAMPLE_TABLE_KEY,
+    DESC_KEY,
+    NAME_KEY,
+    RegistryPath,
+)
 from pephubclient.exceptions import (
     BasePephubclientException,
     PEPExistsError,
@@ -227,15 +229,15 @@ def _save_zip_pep(project: dict, zip_filepath: str, force: bool = False) -> None
             project[SAMPLE_RAW_DICT_KEY]
         ).to_csv(index=False)
 
-    if project[SUBSAMPLE_RAW_LIST_KEY] is not None:
-        if not isinstance(project[SUBSAMPLE_RAW_LIST_KEY], list):
+    if project[SUBSAMPLE_RAW_DICT_KEY] is not None:
+        if not isinstance(project[SUBSAMPLE_RAW_DICT_KEY], list):
             config[CFG_SUBSAMPLE_TABLE_KEY] = ["subsample_table1.csv"]
             content_to_zip["subsample_table1.csv"] = pd.DataFrame(
-                project[SUBSAMPLE_RAW_LIST_KEY]
+                project[SUBSAMPLE_RAW_DICT_KEY]
             ).to_csv(index=False)
         else:
             config[CFG_SUBSAMPLE_TABLE_KEY] = []
-            for number, file in enumerate(project[SUBSAMPLE_RAW_LIST_KEY]):
+            for number, file in enumerate(project[SUBSAMPLE_RAW_DICT_KEY]):
                 file_name = f"subsample_table{number + 1}.csv"
                 config[CFG_SUBSAMPLE_TABLE_KEY].append(file_name)
                 content_to_zip[file_name] = pd.DataFrame(file).to_csv(index=False)
@@ -279,7 +281,7 @@ def _save_unzipped_pep(
     sample_pandas = pd.DataFrame(project_dict.get(SAMPLE_RAW_DICT_KEY, {}))
 
     subsample_list = [
-        pd.DataFrame(sub_a) for sub_a in project_dict.get(SUBSAMPLE_RAW_LIST_KEY) or []
+        pd.DataFrame(sub_a) for sub_a in project_dict.get(SUBSAMPLE_RAW_DICT_KEY) or []
     ]
 
     filenames = []
@@ -305,8 +307,8 @@ def _save_unzipped_pep(
 
 
 def save_pep(
-    project: dict | peppy.Project,
-    reg_path: str = None,
+    project: dict | peprs.Project,
+    reg_path: str | None = None,
     force: bool = False,
     project_path: str | None = None,
     zip: bool = False,
@@ -323,10 +325,10 @@ def save_pep(
             the current directory.
         zip: If True, save project as zip file.
     """
-    if isinstance(project, peppy.Project):
-        project = project.to_dict(extended=True, orient="records")
+    if isinstance(project, peprs.Project):
+        project = project.to_dict(raw=True, by_sample=True)
 
-    project = ProjectDict(**project).model_dump(by_alias=True)
+    project = ProjectDict(**project).model_dump()
 
     if not project_path:
         project_path = os.getcwd()

@@ -12,7 +12,7 @@ class PEPHubSample(RequestManager):
     Class for managing samples in PEPhub.
 
     Provides methods for getting, creating, updating and removing samples. This class
-    is not related to the peppy.Sample class.
+    is not related to the peprs.Sample class.
     """
 
     def __init__(self, jwt_data: str | None = None) -> None:
