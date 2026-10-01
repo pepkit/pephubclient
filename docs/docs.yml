@@ -1,0 +1,10 @@
+site_name: PEPHubClient
+nav:
+  - PEPhubClient: README.md
+  - Quickstart: tutorial.md
+  - Python API: phc_usage.md
+  - Python API samples: phc_samples_usage.md
+  - Python API views: phc_views_usage.md
+  - Python API schemas: phc_schemas.md
+  - CLI usage: cli.md
+  - Changelog: changelog.md
