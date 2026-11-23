@@ -6,7 +6,7 @@
 [![pypi-version](https://img.shields.io/pypi/pyversions/pephubclient.svg?color=%2334D058)](https://pypi.org/project/pephubclient)
 [![Coverage](https://coverage-badge.samuelcolvin.workers.dev/pepkit/pephubclient.svg)](https://coverage-badge.samuelcolvin.workers.dev/redirect/pepkit/pephubclient)
 [![Github badge](https://img.shields.io/badge/source-github-354a75?logo=github)](https://github.com/pepkit/pephubclient)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
 
 `PEPHubClient` is a tool to provide Python API and CLI for [PEPhub](https://pephub.databio.org).
